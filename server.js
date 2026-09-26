@@ -138,7 +138,7 @@ async function gravarUmFormato(roteiro, formato, modo, prefixo) {
   const jobDir = path.join(P.jobs, jobId);
   fs.mkdirSync(jobDir, { recursive: true });
   const total = passosDoFormato(r, formato).length;
-  atualizar({ fase: teste ? 'testando' : 'gravando', formatoAtual: formato, passo: 0, total, pct: 0, pausado: false, mensagem: `${prefixo}${teste ? 'Testando' : 'Preparando'}…` });
+  atualizar({ fase: teste ? 'testando' : 'gravando', formatoAtual: formato, passo: 0, total, pct: 0, pausado: false, mensagem: `${prefixo}${teste ? 'Testando' : previa ? 'Prévia: percorrendo o caminho no site (em segundo plano)' : 'Preparando'}…` });
   // a narração é gerada antes: cada passo espera a fala terminar
   const narracoes = teste ? [] : await prepararNarracao(r, formato, prefixo);
   let textoPasso = '';
@@ -148,7 +148,7 @@ async function gravarUmFormato(roteiro, formato, modo, prefixo) {
       cancelado: () => cancelar,
       pausado: () => pausar,
       aoProgredir: ({ passo, total, indice, texto }) => {
-        textoPasso = `${prefixo}Passo ${passo} de ${total}: ${texto}`;
+        textoPasso = `${prefixo}${previa ? 'Prévia · ' : ''}Passo ${passo} de ${total}: ${texto}`;
         atualizar({ passo, total, indice, mensagem: textoPasso });
       },
       aoEsperar: (txt) => atualizar({ mensagem: `${textoPasso} — ${txt}` })
@@ -186,7 +186,7 @@ async function renderizarJob(jobId, roteiro, prefixo = '', { previa = false, nar
     cancelado: () => cancelar,
     aoProgredir: ({ pct, extra }) => atualizar({ pct, mensagem: `${prefixo}${extra || (previa ? 'Montando a prévia… ' : 'Montando o vídeo… ') + pct + '%'}` })
   });
-  const url = (a) => `/videos/${encodeURIComponent(path.basename(a))}`;
+  const url = (a) => `/videos/${encodeURIComponent(path.basename(a))}?v=${Date.now()}`;
   const extras = {};
   for (const [k, a] of Object.entries(r.extras || {})) extras[k] = url(a);
   return { nome, url: url(nome), formato: FORMATOS[formato].nome + (previa ? ' (prévia)' : ''), extras };
@@ -493,7 +493,7 @@ const servidor = http.createServer(async (req, res) => {
     // arquivos
     if (rota.startsWith('/jobs/')) { const m = rota.match(/^\/jobs\/([^/]+)\/quadros\/([^/]+)$/); if (m) return servirArquivo(req, res, path.join(P.jobs, seguro(m[1]), 'quadros', seguro(m[2]))); }
     if (rota.startsWith('/gravacoes/')) { const a = dentro(P.jobs, rota.slice(11)); if (a) return servirArquivo(req, res, a); }
-    if (rota.startsWith('/videos/')) return servirArquivo(req, res, path.join(P.videos, seguro(rota.slice(8))));
+    if (rota.startsWith('/videos/')) return servirArquivo(req, res, path.join(P.videos, seguro(rota.slice(8))));  // ?v= é ignorado
     if (rota === '/demo') { res.writeHead(302, { Location: '/demo/' }); return res.end(); }
     if (rota.startsWith('/demo/')) {
       let rel = rota.slice(6) || 'index.html';

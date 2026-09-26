@@ -304,6 +304,18 @@
   </aside>
 </main>
 
+<dialog id="dlg-video" class="dlg dlg-video">
+  <div class="dv-topo"><h3 id="dv-titulo">Vídeo pronto</h3><button class="ic" id="dv-fechar" title="Fechar">✕</button></div>
+  <video id="dv-player" controls playsinline></video>
+  <p class="dica" id="dv-dica"></p>
+  <div class="linha-btn">
+    <button class="pri" id="dv-gravar" hidden>● Gravar em alta qualidade</button>
+    <a class="sec" id="dv-baixar" download>Baixar MP4</a>
+    <span id="dv-extras"></span>
+    <button class="sec" id="dv-ok">Fechar</button>
+  </div>
+</dialog>
+
 <dialog id="dlg-fila" class="dlg">
   <h3>☰ Fila de gravação</h3>
   <p class="dica">Marque os roteiros. Eles são gravados um depois do outro, cada um com as suas configurações.</p>

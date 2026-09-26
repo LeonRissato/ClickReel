@@ -368,7 +368,7 @@ function avisarFim(antes, s) {
   if (s.fase === 'erro') { icone = '⚠️'; tipo = 'erro'; titulo = 'Parou com erro'; texto = s.erro || s.mensagem; }
   else if (s.fase === 'parado') { icone = '■'; tipo = 'neutro'; titulo = 'Parado'; texto = s.mensagem; }
   else if (s.fase === 'testado') { icone = '✅'; tipo = 'ok'; titulo = 'Teste concluído'; texto = 'Todos os passos funcionaram. Pode gravar o vídeo.'; }
-  else if (s.fase === 'pronto') { icone = '🎬'; tipo = 'ok'; titulo = s.mensagem; texto = 'O vídeo está à direita e na pasta "videos".'; }
+  else if (s.fase === 'pronto') { abrirVideo(s); return; }
   else return;
   const a = $('#aviso-final');
   a.className = 'aviso-final ' + tipo;
@@ -386,6 +386,33 @@ function avisarFim(antes, s) {
   }
 }
 $('#aviso-final-fechar').onclick = () => ($('#aviso-final').hidden = true);
+
+// janela grande com o vídeo tocando assim que fica pronto
+function abrirVideo(s) {
+  const v = (s.videos || []).slice(-1)[0];
+  const url = s.video || (v && v.url);
+  if (!url) return;
+  const previa = /\/previa-/.test(url);
+  $('#dv-titulo').textContent = previa ? '👁 Prévia pronta' : (s.videos || []).length > 1 ? `🎬 ${s.videos.length} vídeos prontos` : '🎬 Vídeo pronto';
+  $('#dv-dica').textContent = previa
+    ? 'A prévia é leve (baixa resolução) só para conferir. Gostou? Grave em alta qualidade.'
+    : (s.videos || []).length > 1 ? 'Os outros formatos estão nas abas à direita e na pasta "videos".' : 'O vídeo também está na pasta "videos".';
+  const p = $('#dv-player');
+  p.src = url;
+  p.play().catch(() => {});
+  $('#dv-baixar').href = url;
+  $('#dv-baixar').setAttribute('download', (url.split('/').pop() || 'video.mp4').split('?')[0]);
+  $('#dv-gravar').hidden = !previa;
+  const ex = (v && v.extras) || {};
+  const rot = { capa: '🖼 Capa', gif: '🎞 GIF', srt: '💬 Legendas' };
+  $('#dv-extras').innerHTML = Object.entries(ex).map(([k, u]) => `<a class="sec" href="${u}" target="_blank" download>${rot[k] || k}</a>`).join('');
+  if (!$('#dlg-video').open) $('#dlg-video').showModal();
+}
+const fecharVideo = () => { $('#dv-player').pause(); $('#dlg-video').close(); };
+$('#dv-fechar').onclick = fecharVideo;
+$('#dv-ok').onclick = fecharVideo;
+$('#dlg-video').addEventListener('close', () => $('#dv-player').pause());
+$('#dv-gravar').onclick = () => { fecharVideo(); executar('gravar'); };
 
 const NOMES_FORMATO = { horizontal: 'Desktop', tablet: 'Tablet em pé', 'tablet-deitado': 'Tablet deitado', vertical: 'Celular' };
 function atualizarRemontar() {

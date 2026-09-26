@@ -205,6 +205,13 @@ details.secao > :last-child { margin-bottom: 14px; }
 .aviso-versao { display: flex; align-items: center; gap: 10px; justify-content: center; padding: 9px 16px; background: var(--pri-suave); color: var(--txt); border-bottom: 1px solid var(--pri-suave-borda); font-size: 14px; }
 .aviso-versao a { color: var(--pri-texto); font-weight: 700; }
 
+/* janela do vídeo pronto */
+.dlg-video { width: min(1100px, calc(100vw - 32px)); }
+.dv-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.dlg-video video { width: 100%; max-height: 70vh; background: #000; border-radius: 10px; display: block; }
+.dlg-video .dica { margin: 8px 0 0; }
+#dv-extras { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+
 /* diálogo da fila */
 .dlg { border: 1px solid var(--borda); border-radius: 14px; background: var(--card); color: var(--txt); padding: 20px 22px; width: min(520px, calc(100vw - 32px)); box-shadow: 0 30px 80px rgba(0,0,0,.4); }
 .dlg::backdrop { background: rgba(10,8,16,.55); }
