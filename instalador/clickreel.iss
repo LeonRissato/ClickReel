@@ -20,6 +20,7 @@ PrivilegesRequired=lowest
 OutputDir=..\dist
 OutputBaseFilename=ClickReel-Setup-{#Versao}
 SetupIconFile=..\clickreel.ico
+LicenseFile=..\LICENSE
 UninstallDisplayIcon={app}\clickreel.ico
 UninstallDisplayName={#MeuApp}
 Compression=lzma2/max
@@ -40,6 +41,8 @@ Source: "..\server.js";        DestDir: "{app}"; Flags: ignoreversion
 Source: "..\package.json";     DestDir: "{app}"; Flags: ignoreversion
 Source: "..\clickreel.ico";      DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LEIA-ME.txt";      DestDir: "{app}"; Flags: ignoreversion isreadme
+Source: "..\LICENSE";          DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\lib\*";            DestDir: "{app}\lib";          Flags: ignoreversion recursesubdirs
 Source: "..\public\*";         DestDir: "{app}\public";       Flags: ignoreversion recursesubdirs
 Source: "..\demo\*";           DestDir: "{app}\demo";         Flags: ignoreversion recursesubdirs

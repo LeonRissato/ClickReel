@@ -74,3 +74,8 @@ painel (public/)  ──►  server.js  ──►  lib/gravador.js     Playwrigh
 - Senhas digitadas num roteiro ficam salvas no arquivo `.json`. Use um usuário de teste.
 - Ainda não funciona: campos dentro de iframes (por exemplo, o cartão do gateway), upload
   de arquivos e captchas.
+
+## Licença
+
+[MIT](LICENSE) © 2026 Leon Rissato. O instalador inclui FFmpeg, Playwright, Chromium e
+Node.js, cada um com a sua licença: veja [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

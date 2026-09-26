@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Grava vídeos de demonstração do site a partir de uma lista de passos, com cursor, zoom, legendas e moldura.",
   "main": "server.js",
-  "private": true,
   "scripts": {
     "start": "node server.js",
     "instalar-navegador": "playwright install chromium"
@@ -14,5 +13,11 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "Leon Rissato",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeonRissato/ClickReel.git"
   }
 }
