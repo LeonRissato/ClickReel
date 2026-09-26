@@ -26,6 +26,18 @@ e moldura de navegador, tablet ou celular.
   em páginas seguintes. A lista "Esconder na tela" borra qualquer outro campo ou texto.
 - **Pausar / Parar** durante testes e gravações, com a espera de cada passo mostrada ao vivo.
 - **Tema claro, escuro ou automático** no painel.
+- **🔊 Narração automática**: uma voz em português lê as legendas (ou um texto próprio por passo).
+  Vozes neurais da Microsoft (grátis, com internet) ou a voz do Windows (offline). A gravação espera
+  cada fala terminar.
+- **🎬 Abertura e encerramento**: título, subtítulo, chamada final, endereço e QR code.
+- **🏷 Logo (marca d'água)** no canto escolhido, com tamanho e opacidade.
+- **Destacar elemento**: escurece a tela, ilumina um botão ou preço e mostra um balão explicativo.
+- **📦 Arquivos extras**: capa (.jpg), GIF animado e legendas (.srt) junto do MP4.
+- **👁 Prévia rápida**: vídeo leve para conferir antes de montar em alta qualidade.
+- **🔐 Login lembrado**: entre no site uma vez; o ClickReel reaproveita a sessão sem guardar a senha.
+- **Iframes**: encontra campos dentro de janelas embutidas (ex.: cartão do gateway).
+- **☰ Fila**: grava vários roteiros em sequência.
+- **Aviso de atualização** quando sai uma versão nova em Releases.
 - **Qualidade**: tela do Desktop em 1280×720, 1600×900 ou 1920×1080; vídeo em 1080p, 1440p ou 4K;
   modo "Máxima" com captura mais nítida e menos compressão.
 

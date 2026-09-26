@@ -19,17 +19,25 @@
     <button class="sec" id="btn-novo">+ Novo</button>
     <button class="sec" id="btn-duplicar">Duplicar</button>
     <button class="sec perigo" id="btn-excluir">Excluir</button>
+    <button class="sec" id="btn-fila" title="Gravar vários roteiros de uma vez">☰ Fila</button>
   </div>
   <div class="acoes">
     <span id="aviso-salvo" class="aviso"></span>
     <button class="sec btn-tema" id="btn-tema" title="Tema: automático"></button>
     <button class="sec" id="btn-salvar">Salvar</button>
     <button class="sec" id="btn-navegar-topo" title="Você faz o caminho com o mouse; os passos são anotados e o vídeo pode ser gravado em seguida">◉ Gravar navegando</button>
+    <button class="sec" id="btn-previa" title="Grava rápido e monta um vídeo leve (baixa resolução) só para conferir">👁 Prévia</button>
     <button class="sec" id="btn-testar" title="Roda os passos rápido, com o navegador aberto, sem gerar vídeo">Testar</button>
     <button class="pri" id="btn-gravar" title="Grava no formato escolhido à direita">● Gravar vídeo</button>
     <button class="sec" id="btn-todos" title="Grava desktop, tablet e celular, um depois do outro">Gravar nos 3 formatos</button>
   </div>
 </header>
+
+<div id="aviso-versao" class="aviso-versao" hidden>
+  ✨ Nova versão do ClickReel disponível: <b id="nova-versao"></b>.
+  <a id="link-versao" target="_blank" rel="noopener">Baixar</a>
+  <button class="ic" id="fechar-versao" title="Fechar">✕</button>
+</div>
 
 <main class="layout">
   <section class="coluna passos-col">
@@ -65,6 +73,7 @@
         <option value="passar">Passar o mouse</option>
         <option value="tecla">Apertar tecla</option>
         <option value="aguardar">Aguardar aparecer</option>
+        <option value="destacar">Destacar elemento</option>
         <option value="legenda">Só mostrar legenda</option>
       </select>
     </div>
@@ -98,12 +107,14 @@
           <a class="pri" id="btn-baixar" download>Baixar MP4</a>
           <button class="sec" id="btn-pasta">Abrir pasta dos vídeos</button>
         </div>
+        <div class="linha-btn" id="res-extras"></div>
       </div>
       <button class="sec largo" id="btn-remontar" hidden title="Usa a última gravação e só aplica os efeitos de novo — não precisa refazer a compra">↻ Remontar a última gravação com estes efeitos</button>
+      <button class="sec largo" id="btn-remontar-previa" hidden title="Monta em baixa resolução, bem rápido, para conferir os efeitos">👁 Prévia rápida da última gravação</button>
     </div>
 
-    <div class="painel">
-      <h3>Aparência do vídeo</h3>
+    <details class="painel secao" open data-secao="aparencia">
+      <summary>🎨 Aparência do vídeo</summary>
       <label class="campo">Formato
         <div class="seg seg4" data-cfg="formato">
           <button data-v="horizontal">🖥 Desktop</button>
@@ -126,16 +137,111 @@
         <textarea data-cfg="esconder" rows="3" placeholder="Um por linha. Ex.:&#10;Endereço&#10;css: .woocommerce-customer-details"></textarea>
         <small class="dica">Os campos de digitar marcados com 🔒 já são borrados sozinhos (CPF, cartão e senha vêm marcados). Use esta lista para outras coisas: rótulo de campo, texto ou <code>css:</code>.</small>
       </label>
+      <label class="check"><input type="checkbox" data-cfg="legendasNoVideo"> Mostrar as legendas no vídeo</label>
       <label class="campo">Estilo da legenda
         <div class="seg" data-cfg="estiloLegenda">
           <button data-v="escuro">Escura</button>
           <button data-v="claro">Clara</button>
         </div>
       </label>
-    </div>
+    </details>
 
-    <div class="painel">
-      <h3>Gravação</h3>
+    <details class="painel secao" data-secao="narracao">
+      <summary>🔊 Narração automática <span class="tag" data-tag="narracaoAtiva">ligada</span></summary>
+      <label class="check"><input type="checkbox" data-cfg="narracaoAtiva"> Ativar narração</label>
+      <label class="campo">Voz
+        <div class="seg" data-cfg="narracaoMotor">
+          <button data-v="auto">Automática</button>
+          <button data-v="neural">Neural (internet)</button>
+          <button data-v="windows">Do Windows</button>
+        </div>
+        <small class="dica">Neural: vozes naturais da Microsoft, grátis, precisam de internet. Do Windows: funciona sem internet, mais robótica. Automática: usa a neural e, sem internet, a do Windows.</small>
+      </label>
+      <label class="campo">Voz neural
+        <select data-cfg="narracaoVoz" id="vozes"></select>
+      </label>
+      <label class="campo">Velocidade da fala: <b id="velfala-v"></b>
+        <input type="range" min="-30" max="30" step="5" data-cfg="narracaoVelocidade">
+      </label>
+      <label class="campo">Volume da voz: <b id="volfala-v"></b>
+        <input type="range" min="0.3" max="2" step="0.1" data-cfg="volumeNarracao">
+      </label>
+      <label class="check"><input type="checkbox" data-cfg="narracaoUsarLegendas"> Falar as legendas quando o passo não tiver narração própria</label>
+      <small class="dica">Cada passo ganha um campo "Narração". A gravação espera a fala terminar antes do próximo passo. Com narração, a música fica mais baixa.</small>
+    </details>
+
+    <details class="painel secao" data-secao="cartoes">
+      <summary>🎬 Abertura e encerramento <span class="tag" data-tag="abertura,encerramento">ligado</span></summary>
+      <label class="check"><input type="checkbox" data-cfg="abertura"> Abertura</label>
+      <div class="sub" data-mostrar="abertura">
+        <label class="campo">Título<input type="text" data-cfg="aberturaTitulo" placeholder="Como comprar na Editora Heras"></label>
+        <label class="campo">Subtítulo<input type="text" data-cfg="aberturaSubtitulo" placeholder="Em menos de um minuto"></label>
+        <label class="campo">Duração (segundos)<input type="number" min="1" max="10" step="0.5" data-cfg="aberturaSegundos"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-cfg="encerramento"> Encerramento</label>
+      <div class="sub" data-mostrar="encerramento">
+        <label class="campo">Chamada<input type="text" data-cfg="encerramentoTexto" placeholder="Garanta o seu!"></label>
+        <label class="campo">Endereço do site<input type="text" data-cfg="encerramentoUrl" placeholder="https://editoraheras.com.br"></label>
+        <label class="check"><input type="checkbox" data-cfg="encerramentoQr"> Mostrar QR code do endereço</label>
+        <label class="campo">Duração (segundos)<input type="number" min="1" max="12" step="0.5" data-cfg="encerramentoSegundos"></label>
+      </div>
+      <small class="dica">O logo (seção abaixo) aparece nos dois, se houver.</small>
+    </details>
+
+    <details class="painel secao" data-secao="logo">
+      <summary>🏷 Logo (marca d'água) <span class="tag" data-tag="logo">ligado</span></summary>
+      <div class="logo-linha">
+        <div class="logo-prev" id="logo-prev"><span>sem logo</span></div>
+        <div class="linha-btn" style="margin-top:0">
+          <label class="sec" style="cursor:pointer">Enviar logo<input type="file" id="logo-arquivo" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>
+          <button class="sec perigo" id="logo-remover">Remover</button>
+        </div>
+      </div>
+      <small class="dica">PNG com fundo transparente fica melhor. O mesmo logo vale para todos os roteiros.</small>
+      <label class="check"><input type="checkbox" data-cfg="logo"> Mostrar o logo no canto do vídeo</label>
+      <label class="campo">Posição
+        <div class="seg" data-cfg="logoPosicao">
+          <button data-v="sup-esq">↖ Sup. esq.</button>
+          <button data-v="sup-dir">↗ Sup. dir.</button>
+          <button data-v="inf-esq">↙ Inf. esq.</button>
+          <button data-v="inf-dir">↘ Inf. dir.</button>
+        </div>
+      </label>
+      <label class="campo">Tamanho: <b id="logotam-v"></b><input type="range" min="5" max="30" step="1" data-cfg="logoTamanho"></label>
+      <label class="campo">Opacidade: <b id="logoop-v"></b><input type="range" min="0.2" max="1" step="0.05" data-cfg="logoOpacidade"></label>
+    </details>
+
+    <details class="painel secao" data-secao="extras">
+      <summary>📦 Arquivos extras <span class="tag" data-tag="gerarCapa,gerarGif,gerarSrt">ligado</span></summary>
+      <label class="check"><input type="checkbox" data-cfg="gerarCapa"> Capa (imagem .jpg para a miniatura do vídeo)</label>
+      <label class="check"><input type="checkbox" data-cfg="gerarGif"> GIF animado (para WhatsApp e e-mail)</label>
+      <div class="sub" data-mostrar="gerarGif">
+        <label class="campo">Largura do GIF
+          <div class="seg" data-cfg="gifLargura">
+            <button data-v="480">480</button><button data-v="640">640</button><button data-v="800">800</button>
+          </div>
+        </label>
+        <label class="campo">Duração máxima (s) — acelera para caber<input type="number" min="3" max="60" step="1" data-cfg="gifSegundosMax"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-cfg="gerarSrt"> Legendas em arquivo (.srt)</label>
+      <small class="dica">Os arquivos ficam na pasta "videos", com o mesmo nome do vídeo. Se for usar o .srt no YouTube/Instagram, desligue "Mostrar as legendas no vídeo" para não aparecerem duas vezes.</small>
+    </details>
+
+    <details class="painel secao" data-secao="login">
+      <summary>🔐 Login lembrado <span class="tag" data-tag="perfil">em uso</span></summary>
+      <small class="dica">Para gravar áreas com login (minha conta, painel da loja): entre no site uma vez e o ClickReel lembra da sessão. A senha não fica no roteiro.</small>
+      <label class="campo">Usar o login
+        <select data-cfg="perfil" id="perfis"></select>
+      </label>
+      <div class="linha-btn">
+        <button class="sec" id="perfil-novo">+ Novo login…</button>
+        <button class="sec" id="perfil-entrar">Entrar de novo</button>
+        <button class="sec perigo" id="perfil-apagar">Esquecer</button>
+      </div>
+    </details>
+
+    <details class="painel secao" data-secao="gravacao">
+      <summary>⚙️ Gravação</summary>
       <label class="campo">Ritmo
         <div class="seg" data-cfg="velocidade">
           <button data-v="lenta">Calmo</button>
@@ -183,7 +289,13 @@
         <input type="range" min="0.1" max="1" step="0.05" data-cfg="volumeMusica">
       </label>
       <label class="check"><input type="checkbox" data-cfg="mostrarNavegador"> Mostrar o navegador enquanto grava</label>
-    </div>
+    </details>
+
+    <details class="painel secao" data-secao="programa">
+      <summary>💻 Programa</summary>
+      <label class="check"><input type="checkbox" id="pref-atualizacoes"> Avisar quando houver versão nova</label>
+      <div class="linha-btn"><button class="sec" id="btn-ver-atualizacao">Verificar agora</button><small class="dica" id="versao-atual"></small></div>
+    </details>
 
     <div class="painel" id="painel-videos">
       <h3>Vídeos recentes</h3>
@@ -191,6 +303,22 @@
     </div>
   </aside>
 </main>
+
+<dialog id="dlg-fila" class="dlg">
+  <h3>☰ Fila de gravação</h3>
+  <p class="dica">Marque os roteiros. Eles são gravados um depois do outro, cada um com as suas configurações.</p>
+  <div id="fila-lista" class="fila-lista"></div>
+  <label class="campo">Formatos
+    <div class="seg" id="fila-modo">
+      <button data-v="gravar" class="on">O de cada roteiro</button>
+      <button data-v="todos">Os 3 formatos</button>
+    </div>
+  </label>
+  <div class="linha-btn">
+    <button class="pri" id="fila-iniciar">● Gravar a fila</button>
+    <button class="sec" id="fila-fechar">Cancelar</button>
+  </div>
+</dialog>
 
 <div id="aviso-final" class="aviso-final" hidden role="status">
   <span id="aviso-final-icone"></span>
@@ -210,6 +338,7 @@
       <button class="ic perigo" data-op="remover" title="Remover">✕</button>
     </div>
     <div class="p-campos"></div>
+    <div class="p-narr" hidden><input class="narracao" placeholder="🔊 Narração (o que a voz fala) — vazio usa a legenda; “-” para não falar"></div>
     <div class="p-pe">
       <input class="legenda" placeholder="Legenda (opcional) — ex.: 1. Escolha seu livro">
       <select class="formatos" title="Em quais formatos este passo acontece">

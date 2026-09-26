@@ -10,3 +10,7 @@ musicas/*
 *.log
 .DS_Store
 Thumbs.db
+
+.perfis/
+marca/logo.*
+preferencias.json

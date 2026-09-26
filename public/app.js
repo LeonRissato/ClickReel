@@ -9,6 +9,7 @@ const ACOES = {
   tecla: { rotulo: 'Apertar tecla', campos: [['tecla', 'Tecla', 'Enter', 'curto']] },
   aguardar: { rotulo: 'Aguardar aparecer', campos: [['alvo', 'Texto que deve aparecer', 'Pedido recebido'], ['segundos', 'Esperar no máximo (s)', '20', 'curto']] },
   esperar: { rotulo: 'Pausa', campos: [['segundos', 'Segundos', '1.5', 'curto']] },
+  destacar: { rotulo: 'Destacar elemento', campos: [['alvo', 'Elemento a destacar', 'R$ 79,90'], ['texto', 'Texto do balão (opcional)', 'Preço de pré-venda'], ['segundos', 'Segundos', '2.5', 'curto']], zoom: true },
   legenda: { rotulo: 'Só mostrar legenda', campos: [['segundos', 'Segundos na tela', '2.5', 'curto']] }
 };
 const FUNDOS = {
@@ -21,7 +22,7 @@ const FUNDOS = {
 };
 const SENSIVEL = /\b(cpf|cnpj|rg|cart[aã]o|n[uú]mero do cart|cvv|cvc|c[oó]digo de seguran|senha|password|validade)\b/i;
 const vaiBorrar = (p) => (p.borrar === true || p.borrar === false ? p.borrar : SENSIVEL.test(String(p.alvo || '')));
-const PADRAO = { telaDesktop: '1280x720', resolucao: '1080p', esconder: '', formato: 'horizontal', moldura: true, fundo: 'ameixa', zoom: 1.8, velocidade: 'normal', fps: 30, qualidade: 'alta', mostrarNavegador: false, acelerarCarregamentos: true, mostrarUrl: true, cursor: true, estiloLegenda: 'escuro', musica: '', volumeMusica: 0.5 };
+let PADRAO = { telaDesktop: '1280x720', resolucao: '1080p', esconder: '', formato: 'horizontal', moldura: true, fundo: 'ameixa', zoom: 1.8, velocidade: 'normal', fps: 30, qualidade: 'alta', mostrarNavegador: false, acelerarCarregamentos: true, mostrarUrl: true, cursor: true, estiloLegenda: 'escuro', musica: '', volumeMusica: 0.5 };
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -58,6 +59,8 @@ async function abrir(arq) {
   arquivo = arq;
   localStorageSet('ultimoRoteiro', arq);
   renderTudo();
+  if ($('#vozes').options.length) $('#vozes').value = roteiro.config.narracaoVoz || 'pt-BR-FranciscaNeural';
+  if (typeof carregarPerfis === 'function' && $('#perfis').options.length) carregarPerfis();
   marcarAlterado(false);
 }
 async function salvar() {
@@ -132,6 +135,11 @@ function renderPassos() {
       } else lab.appendChild(inp);
       campos.appendChild(lab);
     }
+    const pn = $('.p-narr', li);
+    const nar = $('.narracao', li);
+    pn.hidden = !roteiro.config.narracaoAtiva || ['esperar'].includes(p.acao);
+    nar.value = p.narracao || '';
+    nar.oninput = () => { p.narracao = nar.value; marcarAlterado(); };
     const leg = $('.legenda', li);
     leg.value = p.legenda || '';
     leg.oninput = () => { p.legenda = leg.value; marcarAlterado(); };
@@ -182,11 +190,17 @@ function renderConfig() {
     if (el.classList.contains('seg')) {
       $$('button', el).forEach((b) => {
         b.classList.toggle('on', String(c[k]) === b.dataset.v);
-        b.onclick = (ev) => { ev.preventDefault(); c[k] = k === 'fps' ? Number(b.dataset.v) : b.dataset.v; marcarAlterado(); renderConfig(); };
+        b.onclick = (ev) => { ev.preventDefault(); c[k] = ['fps', 'gifLargura'].includes(k) ? Number(b.dataset.v) : b.dataset.v; marcarAlterado(); renderConfig(); };
       });
     } else if (el.type === 'checkbox') {
       el.checked = !!c[k];
-      el.onchange = () => { c[k] = el.checked; marcarAlterado(); };
+      el.onchange = () => { c[k] = el.checked; marcarAlterado(); atualizarSecoes(); if (k === 'narracaoAtiva') renderPassos(); };
+    } else if (el.type === 'text') {
+      el.value = c[k] ?? '';
+      el.oninput = () => { c[k] = el.value; marcarAlterado(); };
+    } else if (el.type === 'number') {
+      el.value = c[k] ?? '';
+      el.oninput = () => { const v = parseFloat(el.value); if (Number.isFinite(v)) { c[k] = v; marcarAlterado(); } };
     } else if (el.type === 'range') {
       el.value = c[k];
       el.oninput = () => { c[k] = Number(el.value); marcarAlterado(); rotulosRange(); };
@@ -200,6 +214,7 @@ function renderConfig() {
   });
   rotulosRange();
   atualizarRemontar();
+  atualizarSecoes();
   const cores = $('#cores');
   cores.innerHTML = '';
   for (const [nome, grad] of Object.entries(FUNDOS)) {
@@ -217,7 +232,19 @@ function renderConfig() {
   custom.oninput = () => { c.fundo = custom.value; marcarAlterado(); };
   cores.appendChild(custom);
 }
+// selos "ligado" nos títulos e subseções que só aparecem quando a opção está ligada
+function atualizarSecoes() {
+  const c = roteiro.config;
+  $$('[data-tag]').forEach((t) => (t.hidden = !t.dataset.tag.split(',').some((k) => !!c[k])));
+  $$('[data-mostrar]').forEach((d) => (d.hidden = !c[d.dataset.mostrar]));
+}
 function rotulosRange() {
+  const c = roteiro.config;
+  const v = Number(c.narracaoVelocidade) || 0;
+  $('#velfala-v').textContent = v === 0 ? 'normal' : (v > 0 ? '+' : '') + v + '%';
+  $('#volfala-v').textContent = Math.round((Number(c.volumeNarracao) || 1) * 100) + '%';
+  $('#logotam-v').textContent = (Number(c.logoTamanho) || 12) + '% da largura';
+  $('#logoop-v').textContent = Math.round((Number(c.logoOpacidade) || 0.85) * 100) + '%';
   const z = Number(roteiro.config.zoom);
   $('#zoom-v').textContent = z <= 1.01 ? 'desligado' : z.toFixed(1) + 'x';
   $('#vol-v').textContent = Math.round(Number(roteiro.config.volumeMusica) * 100) + '%';
@@ -232,8 +259,11 @@ async function carregarVideos() {
   $('#videos').innerHTML = v.length ? v.map((x) => `<li><a href="${x.url}" data-video="${x.url}">${esc(x.nome)}</a></li>`).join('') : '<li><small>Nenhum vídeo ainda.</small></li>';
   $$('#videos a').forEach((a) => (a.onclick = (e) => { e.preventDefault(); mostrarVideo(a.dataset.video, a.textContent); }));
 }
-function mostrarVideo(url, nome) {
+function mostrarVideo(url, nome, extras) {
   $('#resultado').hidden = false;
+  const ex = extras || ((estado.videos || []).find((v) => v.url === url) || {}).extras || {};
+  const rot = { capa: '🖼 Capa', gif: '🎞 GIF', srt: '💬 Legendas .srt' };
+  $('#res-extras').innerHTML = Object.entries(ex).map(([k, u]) => `<a class="sec" href="${u}" target="_blank" download>${rot[k] || k}</a>`).join('');
   $('#video').src = url;
   $('#btn-baixar').href = url;
   $('#btn-baixar').setAttribute('download', nome || 'video.mp4');
@@ -325,9 +355,9 @@ async function executar(modo) {
   try { await api('/api/executar', { method: 'POST', body: { roteiro, modo } }); }
   catch (e) { mostrarErroLocal(e.message); }
 }
-async function remontar() {
+async function remontar(previa = false) {
   await salvar();
-  try { await api('/api/renderizar', { method: 'POST', body: { roteiro } }); }
+  try { await api('/api/renderizar', { method: 'POST', body: { roteiro, previa } }); }
   catch (e) { mostrarErroLocal(e.message); }
 }
 // ---------------- aviso quando um trabalho termina ----------------
@@ -363,6 +393,7 @@ function atualizarRemontar() {
   const f = roteiro.config.formato;
   const tem = estado.ultimas && estado.ultimas[f];
   $('#btn-remontar').hidden = !tem;
+  $('#btn-remontar-previa').hidden = !tem;
   $('#btn-remontar').textContent = `↻ Remontar a última gravação (${NOMES_FORMATO[f]}) com estes efeitos`;
   const dicas = {
     horizontal: 'Vídeo 16:9 com janela de navegador.',
@@ -383,7 +414,7 @@ function mostrarErroLocal(msg) {
   $('#st-erro').textContent = msg;
 }
 
-const NOMES_FASE = { parado: 'Parado', gravando: 'Gravando', testando: 'Testando', renderizando: 'Montando', pronto: 'Pronto', testado: 'Teste ok', erro: 'Erro', apontando: 'Apontando', navegando: 'Anotando', capturado: 'Passos anotados' };
+const NOMES_FASE = { parado: 'Parado', gravando: 'Gravando', testando: 'Testando', renderizando: 'Montando', pronto: 'Pronto', testado: 'Teste ok', erro: 'Erro', apontando: 'Apontando', navegando: 'Anotando', capturado: 'Passos anotados', login: 'Login' };
 function aplicarEstado(s) {
   const antes = estado;
   estado = s;
@@ -405,7 +436,7 @@ function aplicarEstado(s) {
   if (s.pausado && podePausar) $('#st-fase').textContent = 'Pausado';
   avisarFim(antes, s);
   $('#btn-terminar').hidden = s.fase !== 'navegando';
-  ['#btn-gravar', '#btn-testar', '#btn-remontar', '#btn-todos', '#btn-navegar', '#btn-navegar-topo'].forEach((b) => ($(b).disabled = !!s.ocupado));
+  ['#btn-gravar', '#btn-testar', '#btn-remontar', '#btn-remontar-previa', '#btn-todos', '#btn-navegar', '#btn-navegar-topo', '#btn-previa', '#btn-fila', '#perfil-novo', '#perfil-entrar'].forEach((b) => ($(b).disabled = !!s.ocupado));
   $$('.apontar').forEach((b) => (b.disabled = !!s.ocupado));
   atualizarRemontar();
   // destaca o passo em execução / com erro
@@ -428,6 +459,8 @@ function aplicarEstado(s) {
   // vídeos prontos (um ou vários formatos)
   const lista = s.videos || [];
   if (s.video && antes.video !== s.video) { mostrarVideo(s.video, s.videoNome); carregarVideos(); }
+  if (s.fila && s.ocupado) $('#st-fase').textContent = `Fila ${s.fila.atual}/${s.fila.total}`;
+  if (antes.fase === 'login' && s.fase !== 'login') carregarPerfis();
   const abas = $('#res-abas');
   abas.innerHTML = lista.length > 1 ? lista.map((v) => `<button data-url="${v.url}" data-nome="${esc(v.nome)}" class="${v.url === $('#video').getAttribute('src') ? 'on' : ''}">${esc(v.formato)}</button>`).join('') : '';
   $$('button', abas).forEach((b) => (b.onclick = () => { mostrarVideo(b.dataset.url, b.dataset.nome); aplicarEstado(estado); }));
@@ -502,10 +535,125 @@ $('#add-outro').onchange = (e) => { if (e.target.value) adicionar(e.target.value
 document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); salvar(); } });
 window.addEventListener('beforeunload', (e) => { if (alterado) { e.preventDefault(); e.returnValue = ''; } });
 
+// ---------------- prévia, fila ----------------
+$('#btn-previa').onclick = () => executar('previa');
+$('#btn-remontar-previa').onclick = () => remontar(true);
+$('#btn-fila').onclick = async () => {
+  const lista = await api('/api/roteiros');
+  $('#fila-lista').innerHTML = lista.map((r) => `<label><input type="checkbox" value="${esc(r.arquivo)}" ${r.arquivo === arquivo ? 'checked' : ''}> ${esc(r.nome)}</label>`).join('');
+  $('#dlg-fila').showModal();
+};
+$$('#fila-modo button').forEach((b) => (b.onclick = (e) => { e.preventDefault(); $$('#fila-modo button').forEach((x) => x.classList.toggle('on', x === b)); }));
+$('#fila-fechar').onclick = () => $('#dlg-fila').close();
+$('#fila-iniciar').onclick = async () => {
+  const arquivos = $$('#fila-lista input:checked').map((i) => i.value);
+  if (!arquivos.length) return alert('Marque pelo menos um roteiro.');
+  if (alterado) await salvar();
+  const modo = $('#fila-modo button.on').dataset.v;
+  $('#dlg-fila').close();
+  try { await api('/api/fila', { method: 'POST', body: { arquivos, modo } }); } catch (e) { mostrarErroLocal(e.message); }
+};
+
+// ---------------- logo ----------------
+async function carregarLogo() {
+  const { tem } = await api('/api/logo');
+  $('#logo-prev').innerHTML = tem ? `<img src="/logo?${Date.now()}" alt="logo">` : '<span>sem logo</span>';
+  $('#logo-remover').disabled = !tem;
+}
+$('#logo-arquivo').onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (f.size > 5e6) return alert('Imagem muito grande (máx. 5 MB).');
+  const r = new FileReader();
+  r.onload = async () => {
+    try {
+      await api('/api/logo', { method: 'POST', body: { dataUrl: r.result } });
+      await carregarLogo();
+      if (!roteiro.config.logo) { roteiro.config.logo = true; marcarAlterado(); renderConfig(); }
+    } catch (err) { alert(err.message); }
+  };
+  r.readAsDataURL(f);
+  e.target.value = '';
+};
+$('#logo-remover').onclick = async () => { if (confirm('Remover o logo?')) { await api('/api/logo', { method: 'DELETE' }); carregarLogo(); } };
+
+// ---------------- vozes da narração ----------------
+async function carregarVozes() {
+  const v = await api('/api/vozes');
+  $('#vozes').innerHTML = Object.entries(v).map(([id, nome]) => `<option value="${id}">${esc(nome)}</option>`).join('');
+  if (roteiro) $('#vozes').value = roteiro.config.narracaoVoz || 'pt-BR-FranciscaNeural';
+}
+
+// ---------------- login lembrado ----------------
+async function carregarPerfis() {
+  const p = await api('/api/perfis');
+  const atual = roteiro ? roteiro.config.perfil || '' : '';
+  const ops = ['<option value="">Sem login (navegador limpo)</option>'].concat(p.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`));
+  if (atual && !p.includes(atual)) ops.push(`<option value="${esc(atual)}">${esc(atual)} (ainda não criado)</option>`);
+  $('#perfis').innerHTML = ops.join('');
+  $('#perfis').value = atual;
+  $('#perfil-entrar').disabled = !atual || estado.ocupado;
+  $('#perfil-apagar').disabled = !atual || estado.ocupado;
+}
+$('#perfis').addEventListener('change', () => carregarPerfis());
+async function entrarPerfil(nome) {
+  const primeiro = roteiro.passos.find((p) => p.acao === 'abrir' && p.url && p.url.length > 8);
+  const url = prompt('Endereço da página de login:', primeiro ? primeiro.url : 'https://');
+  if (!url) return;
+  try {
+    const r = await api('/api/perfis/entrar', { method: 'POST', body: { perfil: nome, url, config: roteiro.config } });
+    roteiro.config.perfil = r.perfil;
+    marcarAlterado();
+    await salvar();
+    await carregarPerfis();
+  } catch (e) { mostrarErroLocal(e.message); }
+}
+$('#perfil-novo').onclick = () => { const n = prompt('Nome para este login (ex.: loja-cliente, wordpress-admin):', 'loja-cliente'); if (n) entrarPerfil(n); };
+$('#perfil-entrar').onclick = () => { if (roteiro.config.perfil) entrarPerfil(roteiro.config.perfil); };
+$('#perfil-apagar').onclick = async () => {
+  const n = roteiro.config.perfil;
+  if (!n || !confirm(`Esquecer o login "${n}"? Você terá que entrar de novo para usá-lo.`)) return;
+  await api('/api/perfis/apagar', { method: 'POST', body: { perfil: n } });
+  roteiro.config.perfil = '';
+  marcarAlterado(); await salvar(); renderConfig(); carregarPerfis();
+};
+
+// ---------------- atualização ----------------
+async function checarVersao(forcar = false) {
+  try {
+    const prefs = await api('/api/preferencias');
+    $('#pref-atualizacoes').checked = prefs.checarAtualizacoes !== false;
+    $('#versao-atual').textContent = `Versão instalada: ${prefs.versao}`;
+    if (prefs.checarAtualizacoes === false && !forcar) return;
+    const a = await api('/api/atualizacao' + (forcar ? '?forcar=1' : ''));
+    const fechada = localStorageGet('versaoFechada') === a.nova;
+    $('#aviso-versao').hidden = !a.nova || (fechada && !forcar);
+    if (a.nova) { $('#nova-versao').textContent = a.nova; $('#link-versao').href = a.url; }
+    if (forcar) $('#versao-atual').textContent = a.nova ? `Versão ${a.nova} disponível (instalada: ${a.atual})` : `Você está na versão mais nova (${a.atual}).`;
+  } catch (_) { if (forcar) $('#versao-atual').textContent = 'Não consegui verificar agora (sem internet?).'; }
+}
+$('#pref-atualizacoes').onchange = async (e) => { await api('/api/preferencias', { method: 'PUT', body: { checarAtualizacoes: e.target.checked } }); if (e.target.checked) checarVersao(); };
+$('#btn-ver-atualizacao').onclick = () => checarVersao(true);
+$('#fechar-versao').onclick = () => { localStorageSet('versaoFechada', $('#nova-versao').textContent); $('#aviso-versao').hidden = true; };
+
+// seções abertas/fechadas são lembradas
+$$('details.secao').forEach((d) => {
+  const k = 'secao-' + d.dataset.secao;
+  const v = localStorageGet(k);
+  if (v === '1') d.open = true; else if (v === '0') d.open = false;
+  d.addEventListener('toggle', () => localStorageSet(k, d.open ? '1' : '0'));
+});
+
 (async function iniciar() {
+  try { PADRAO = { ...PADRAO, ...(await api('/api/padrao')) }; } catch (_) {}
+  await carregarVozes();
   await carregarMusicas();
   await carregarLista();
   await carregarMusicas();
+  await carregarVozes();
+  await carregarPerfis();
+  carregarLogo();
   carregarVideos();
   conectarEventos();
+  checarVersao();
 })();

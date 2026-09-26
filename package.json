@@ -1,6 +1,6 @@
 {
   "name": "clickreel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Grava vídeos de demonstração do site a partir de uma lista de passos, com cursor, zoom, legendas e moldura.",
   "main": "server.js",
   "scripts": {
@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0",
-    "playwright": "1.56.0"
+    "msedge-tts": "^2.0.8",
+    "playwright": "1.56.0",
+    "qrcode": "^1.5.4"
   },
   "engines": {
     "node": ">=18"

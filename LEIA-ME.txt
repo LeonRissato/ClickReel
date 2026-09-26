@@ -55,6 +55,18 @@ Dados sensíveis (CPF, cartão, senha)
   borrado se aparecer em outra página (por exemplo, no "pedido recebido").
   Para esconder outras coisas, use "Esconder na tela" nas configurações.
 
+Novidades da versão 1.1 (tudo nas seções da direita, cada uma com liga/desliga)
+  🔊 Narração automática: a voz lê as legendas ou o campo "Narração" de cada passo.
+  🎬 Abertura e encerramento: título no começo; chamada, endereço e QR code no fim.
+  🏷 Logo: envie o logo uma vez e escolha o canto, o tamanho e a opacidade.
+  📦 Arquivos extras: capa (.jpg), GIF e legendas (.srt) junto do vídeo.
+  🔐 Login lembrado: "+ Novo login…", faça o login na janela e feche-a.
+     Depois escolha esse login no roteiro. A senha não fica salva no roteiro.
+  👁 Prévia: vídeo leve para conferir antes de gravar em alta qualidade.
+  ☰ Fila: marque vários roteiros e grave todos de uma vez.
+  Novo passo "Destacar elemento": escurece a tela e ilumina um botão ou preço.
+  Campos dentro de iframes (ex.: cartão do gateway) agora são encontrados.
+
 Pausar e parar
   Durante o teste ou a gravação aparecem os botões "❚❚ Pausar" e "■ Parar".
   O painel mostra o que está esperando ("procurando ... 5s de 20s").

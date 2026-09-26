@@ -33,6 +33,27 @@
   #legenda span { display: inline-block; font-weight: 700; letter-spacing: -.01em; text-align: center; border-radius: 999px; line-height: 1.2; max-width: 88%; }
   #legenda.escuro span { background: rgba(14,14,20,.82); color: #fff; box-shadow: 0 16px 40px rgba(0,0,0,.35); }
   #legenda.claro span { background: rgba(255,255,255,.95); color: #17171c; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+  /* destaque de elemento */
+  #destaque { position: absolute; border-radius: 10px; pointer-events: none; opacity: 0;
+    box-shadow: 0 0 0 9999px rgba(8,6,14,.62), 0 0 0 3px rgba(255,255,255,.95), 0 0 26px 8px rgba(255,196,0,.55); }
+  #balao { position: absolute; background: #fff; color: #17171c; font-weight: 700; border-radius: 12px; padding: 9px 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35); opacity: 0; white-space: nowrap; font-size: 16px; line-height: 1.2; pointer-events: none; }
+  /* marca d'água */
+  #marca { position: absolute; z-index: 6; pointer-events: none; display: none; }
+  /* abertura / encerramento */
+  #cartao { position: absolute; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 26px; padding: 90px; color: #fff; overflow: hidden; }
+  #cartao.claro-txt { color: #1b1624; }
+  #cartao .cf, #cartao .cb { position: absolute; inset: 0; z-index: -1; }
+  #cartao .cb { background: radial-gradient(1200px 700px at 15% 10%, rgba(255,255,255,.18), transparent 60%), radial-gradient(900px 600px at 90% 95%, rgba(0,0,0,.25), transparent 60%); }
+  #cartao img { max-height: 150px; max-width: 60%; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0,0,0,.3)); }
+  #cartao h1 { font-size: 78px; line-height: 1.05; letter-spacing: -.02em; max-width: 92%; }
+  #cartao p { font-size: 36px; opacity: .88; max-width: 88%; line-height: 1.25; }
+  #cartao .url { font-size: 34px; font-weight: 700; background: rgba(255,255,255,.16); padding: 12px 28px; border-radius: 999px; }
+  #cartao.claro-txt .url { background: rgba(0,0,0,.08); }
+  #cartao .qr { background: #fff; padding: 16px; border-radius: 22px; width: 250px; height: 250px; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  #cartao .qr svg { width: 100%; height: 100%; display: block; }
+  #cartao .item { will-change: transform, opacity; }
 </style>
 </head>
 <body>
@@ -48,6 +69,8 @@
     <div id="conteudo">
       <div id="camera">
         <img id="quadro" alt="">
+        <div id="destaque"></div>
+        <div id="balao"></div>
         <div id="ripple"></div>
         <div id="cursor"></div>
       </div>
@@ -55,6 +78,8 @@
     <div id="ilha"></div>
   </div>
   <div id="legenda"><span></span></div>
+  <img id="marca" alt="">
+  <div id="cartao"><div class="cf"></div><div class="cb"></div></div>
 </div>
 <script>
 const FUNDOS = {
@@ -81,14 +106,16 @@ function ultimoAte(lista, t, chave = 't') {
   return r;
 }
 
-window.iniciar = function (linha, config, saida, base) {
-  L = linha; C = config; S = saida; BASE = base; VP = linha.viewport;
+let EX = {};
+window.iniciar = async function (linha, config, saida, base, extras = {}) {
+  L = linha; C = config; S = saida; BASE = base; VP = linha.viewport; EX = extras || {};
   const formato = linha.formato || C.formato || 'horizontal';
   const aparelho = formato === 'horizontal' ? 'navegador' : formato === 'vertical' ? 'celular' : 'tablet';
   vertical = aparelho !== 'navegador';          // cursor de toque (círculo) em celular e tablet
   const retrato = S.height > S.width;           // legenda em cima (retrato) ou embaixo (paisagem)
   raioToque = aparelho === 'tablet' ? 22 : 17;
   legendas = (L.passos || []).filter((p) => p.legenda && p.legenda.trim()).map((p) => ({ t: p.t0, texto: p.legenda.trim() }));
+  if (C.legendasNoVideo === false) legendas = [];
   const temLegenda = legendas.some((l) => l.texto !== '-');
 
   const palco = $('palco');
@@ -157,6 +184,68 @@ window.iniciar = function (linha, config, saida, base) {
   else { cur.innerHTML = SETA; cur.style.width = '22px'; cur.style.height = '31px'; }
 
   montarCamera();
+
+  // marca d'água (logo no canto)
+  const marca = $('marca');
+  if (C.logo && EX.logoUrl) {
+    marca.src = EX.logoUrl;
+    await marca.decode().catch(() => {});
+    const w = S.width * clamp(Number(C.logoTamanho) || 12, 4, 40) / 100;
+    const m = Math.round(Math.min(S.width, S.height) * 0.035);
+    const pos = C.logoPosicao || 'inf-dir';
+    Object.assign(marca.style, {
+      display: 'block', width: w + 'px', height: 'auto', opacity: String(clamp(Number(C.logoOpacidade) || 0.85, 0.1, 1)),
+      top: pos.startsWith('sup') ? m + 'px' : 'auto', bottom: pos.startsWith('inf') ? m + 'px' : 'auto',
+      left: pos.endsWith('esq') ? m + 'px' : 'auto', right: pos.endsWith('dir') ? m + 'px' : 'auto'
+    });
+  }
+  // cartões de abertura/encerramento usam o mesmo fundo do vídeo
+  $('cartao').querySelector('.cf').style.background = $('fundo').style.background;
+  $('cartao').classList.toggle('claro-txt', C.fundo === 'claro');
+  if (EX.logoUrl) { const i = new Image(); i.src = EX.logoUrl; await i.decode().catch(() => {}); }
+};
+
+// ---------- abertura / encerramento ----------
+let cartaoAtual = '';
+const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function montarCartao(tipo) {
+  if (cartaoAtual === tipo) return;
+  cartaoAtual = tipo;
+  const c = $('cartao');
+  c.querySelectorAll('.item').forEach((x) => x.remove());
+  const retrato = S.height > S.width;
+  const itens = [];
+  if (EX.logoUrl) itens.push(`<img class="item" src="${EX.logoUrl}" alt="">`);
+  if (tipo === 'abertura') {
+    if (C.aberturaTitulo) itens.push(`<h1 class="item">${esc(C.aberturaTitulo)}</h1>`);
+    if (C.aberturaSubtitulo) itens.push(`<p class="item">${esc(C.aberturaSubtitulo)}</p>`);
+  } else {
+    if (C.encerramentoTexto) itens.push(`<h1 class="item">${esc(C.encerramentoTexto)}</h1>`);
+    if (C.encerramentoUrl) itens.push(`<div class="item url">${esc(String(C.encerramentoUrl).replace(/^https?:\/\//, '').replace(/\/$/, ''))}</div>`);
+    if (EX.qrSvg) itens.push(`<div class="item qr">${EX.qrSvg}</div>`);
+  }
+  c.insertAdjacentHTML('beforeend', itens.join(''));
+  c.querySelectorAll('h1').forEach((h) => (h.style.fontSize = retrato ? '88px' : '78px'));
+}
+window.desenharCartao = async function (tipo, p, ts) {
+  await window.desenhar(ts, 0, true);    // o site fica por baixo (aparece na transição)
+  montarCartao(tipo);
+  const c = $('cartao');
+  const dur = tipo === 'abertura' ? Math.max(1, Number(C.aberturaSegundos) || 3) : Math.max(1, Number(C.encerramentoSegundos) || 4);
+  const seg = p * dur;
+  const trans = 0.5;
+  let opac;
+  if (tipo === 'abertura') opac = seg > dur - trans ? 1 - ease((seg - (dur - trans)) / trans) : 1;
+  else opac = ease(clamp(seg / trans, 0, 1));
+  c.style.display = 'flex';
+  c.style.opacity = String(opac);
+  // entrada dos itens, um depois do outro
+  c.querySelectorAll('.item').forEach((el, k) => {
+    const q = ease(clamp((seg - (tipo === 'abertura' ? 0.1 : trans * 0.6) - k * 0.12) / 0.55, 0, 1));
+    el.style.opacity = String(q);
+    el.style.transform = `translateY(${(1 - q) * 34}px)`;
+  });
+  $('marca').style.visibility = 'hidden';
 };
 
 // ---------- câmera (zoom automático) ----------
@@ -220,7 +309,8 @@ function carregar(nome) {
   return img.decode().catch(() => {});
 }
 
-window.desenhar = async function (t, o) {
+window.desenhar = async function (t, o, deCartao = false) {
+  if (!deCartao) { $('cartao').style.display = 'none'; $('marca').style.visibility = 'visible'; }
   // quadro da tela gravada
   const qi = ultimoAte(L.quadros, t);
   const q = L.quadros[Math.max(0, qi)];
@@ -269,6 +359,23 @@ window.desenhar = async function (t, o) {
     const u = L.urls[Math.max(0, ultimoAte(L.urls, t))].url.replace(/[?#].*$/, '').replace(/^https?:\/\//, '').replace(/\/$/, '');
     const s = document.querySelector('#url span'); if (s.textContent !== u) s.textContent = u;
   }
+
+  // destaque de elemento (escurece o resto e mostra o balão)
+  const dz = $('destaque'), bl = $('balao');
+  const d = (L.passos || []).find((p) => p.destaque && t >= p.destaque.t0 - 0.35 && t <= p.destaque.t1 + 0.35);
+  if (d) {
+    const b = d.destaque.box, pad = 8;
+    const op = Math.min(ease(clamp((t - d.destaque.t0 + 0.35) / 0.35, 0, 1)), ease(clamp((d.destaque.t1 + 0.35 - t) / 0.35, 0, 1)));
+    Object.assign(dz.style, { left: b.x - pad + 'px', top: b.y - pad + 'px', width: b.width + pad * 2 + 'px', height: b.height + pad * 2 + 'px', opacity: String(op) });
+    if (d.destaque.texto) {
+      if (bl.textContent !== d.destaque.texto) bl.textContent = d.destaque.texto;
+      const bw = bl.offsetWidth, bh = bl.offsetHeight;
+      const acima = b.y - pad - bh - 14 > 4;
+      const x = clamp(b.x + b.width / 2 - bw / 2, 6, VP.width - bw - 6);
+      const y = acima ? b.y - pad - bh - 14 : b.y + b.height + pad + 14;
+      Object.assign(bl.style, { left: x + 'px', top: y + 'px', opacity: String(op), transform: `translateY(${(1 - op) * 8}px)` });
+    } else bl.style.opacity = '0';
+  } else { dz.style.opacity = '0'; bl.style.opacity = '0'; }
 
   // legenda
   const leg = $('legenda'), span = leg.querySelector('span');

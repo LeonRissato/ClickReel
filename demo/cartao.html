@@ -1,0 +1,11 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>
+body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#fff}
+label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px;margin:0 0 12px}
+input{font:inherit;padding:11px 13px;border:1.5px solid #d8d0dc;border-radius:9px;font-weight:400}
+.linha{display:flex;gap:12px}.linha label{flex:1}
+small{color:#8a8290;font-size:12px}
+</style></head><body>
+<label>Número do cartão<input name="numero" placeholder="0000 0000 0000 0000" autocomplete="off"></label>
+<div class="linha"><label>Validade<input name="validade" placeholder="MM/AA"></label><label>CVV<input name="cvv" placeholder="123"></label></div>
+<small>🔒 Campos seguros do gateway (iframe de exemplo)</small>
+</body></html>
