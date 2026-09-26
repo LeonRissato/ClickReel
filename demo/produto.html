@@ -1,0 +1,5 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Livro — Livraria Exemplo</title><link rel="stylesheet" href="estilo.css"><script src="loja.js"></script></head><body><script>topo()</script>
+<main id="m"></main>
+<script>const id=new URLSearchParams(location.search).get('id')||'estrela',l=LIVROS[id];document.title=l.t+' — Livraria Exemplo';
+document.getElementById('m').innerHTML=`<div class="produto"><div class="capa ${l.c}">${l.t}</div><div><h1>${l.t}</h1><div class="preco" style="font-size:28px">${real(l.p)}</div><p class="info">Uma aventura sobre coragem, perdas e o caminho de volta para casa. Edição em capa dura, com ilustrações exclusivas e marcador de brinde.</p><button class="btn" id="add">Adicionar ao carrinho</button><div class="ficha">Páginas: 312 · Formato: 16 x 23 cm · Acabamento: capa dura · Ano: 2026</div></div></div>`;
+document.getElementById('add').onclick=()=>{const c=carrinho();c.push(id);localStorage.setItem('carrinho',JSON.stringify(c));setTimeout(()=>location.href='carrinho.html',250)}</script></body></html>

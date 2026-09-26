@@ -1,0 +1,18 @@
+{
+  "name": "estudio-demo",
+  "version": "1.0.0",
+  "description": "Grava vídeos de demonstração do site a partir de uma lista de passos, com cursor, zoom, legendas e moldura.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "instalar-navegador": "playwright install chromium"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "1.56.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

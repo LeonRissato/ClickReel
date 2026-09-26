@@ -1,0 +1,11 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pagamento — Livraria Exemplo</title><link rel="stylesheet" href="estilo.css"><script src="loja.js"></script></head><body><script>topo()</script>
+<main><h1>Finalizar compra</h1><p class="sub">Só mais um passo.</p>
+<form action="obrigado.html" onsubmit="localStorage.removeItem('carrinho')">
+<label class="cheio">Nome completo<input name="nome" placeholder="Como está no documento"></label>
+<label>E-mail<input name="email" type="email" placeholder="voce@email.com"></label>
+<label>CEP<input name="cep" placeholder="00000-000"></label>
+<label>Estado<select name="uf"><option>São Paulo</option><option>Rio de Janeiro</option><option>Minas Gerais</option><option>Bahia</option></select></label>
+<label>Número<input name="numero" placeholder="Ex.: 120"></label>
+<div class="cheio"><div style="font-weight:600;font-size:14px;margin-bottom:8px">Pagamento</div><div class="pagamento"><label><input type="radio" name="pg" value="pix"> Pix</label><label><input type="radio" name="pg" value="cartao"> Cartão de crédito</label><label><input type="radio" name="pg" value="boleto"> Boleto</label></div></div>
+<div class="cheio" style="text-align:right"><button class="btn" type="submit">Fazer pedido</button></div>
+</form></main></body></html>

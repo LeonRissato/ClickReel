@@ -1,0 +1,12 @@
+node_modules/
+navegadores/
+build/
+dist/
+.gravacoes/
+videos/*
+!videos/.keep
+musicas/*
+!musicas/.gitkeep
+*.log
+.DS_Store
+Thumbs.db

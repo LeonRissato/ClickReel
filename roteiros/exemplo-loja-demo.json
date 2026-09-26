@@ -1,0 +1,81 @@
+{
+  "nome": "Exemplo - Loja demo",
+  "passos": [
+    {
+      "acao": "abrir",
+      "url": "http://localhost:4580/demo/",
+      "legenda": "Comprar na nossa loja é rapidinho"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "A Última Estrela",
+      "legenda": "1. Escolha o seu livro"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Adicionar ao carrinho",
+      "legenda": "2. Coloque no carrinho"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Finalizar compra",
+      "legenda": "3. Vá para o pagamento"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Nome completo",
+      "texto": "Maria Oliveira",
+      "legenda": "4. Preencha seus dados"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "E-mail",
+      "texto": "maria@exemplo.com"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "CEP",
+      "texto": "01310-100"
+    },
+    {
+      "acao": "selecionar",
+      "alvo": "Estado",
+      "texto": "São Paulo"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Número",
+      "texto": "120"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Pix",
+      "legenda": "5. Pague com Pix"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Fazer pedido"
+    },
+    {
+      "acao": "esperar",
+      "segundos": "2",
+      "legenda": "Pronto! Seu livro já está a caminho"
+    }
+  ],
+  "config": {
+    "formato": "horizontal",
+    "moldura": true,
+    "fundo": "ameixa",
+    "zoom": 1.8,
+    "velocidade": "normal",
+    "fps": 30,
+    "qualidade": "alta",
+    "mostrarNavegador": false,
+    "acelerarCarregamentos": true,
+    "mostrarUrl": true,
+    "cursor": true,
+    "estiloLegenda": "escuro",
+    "musica": "",
+    "volumeMusica": 0.5
+  }
+}

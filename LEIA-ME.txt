@@ -1,0 +1,75 @@
+ESTÚDIO DEMO
+Grava vídeos de demonstração do seu site (por exemplo, uma compra) a partir de
+uma lista de passos. O vídeo sai em MP4 com cursor animado, zoom nos cliques,
+legendas e moldura de navegador, tablet ou celular.
+
+------------------------------------------------------------------------------
+INSTALAR (Windows)
+------------------------------------------------------------------------------
+Com o instalador (.exe): abra EstudioDemo-Setup e avance até o fim. Use o
+ícone "Estúdio Demo" na Área de Trabalho.
+
+Pelo código-fonte:
+1. Instale o Node.js (versão LTS) em https://nodejs.org/pt
+2. Dê dois cliques em INSTALAR.bat e espere terminar. Ele baixa uns 200 MB e
+   cria o ícone na Área de Trabalho.
+3. Abra pelo ícone ou pelo ABRIR-PAINEL.bat.
+
+O painel abre no navegador em http://localhost:4580
+Deixe a janela preta aberta enquanto usa. Fechar essa janela encerra o programa.
+
+------------------------------------------------------------------------------
+COMO USAR
+------------------------------------------------------------------------------
+1. Escolha um roteiro no topo, ou clique em "+ Novo".
+   O roteiro "Exemplo - Loja demo" funciona na hora, numa loja de exemplo
+   embutida. Rode-o primeiro para ver o resultado.
+
+2. Monte os passos. Há três formas de fazer isso:
+   - Clique em "◉ Criar passos navegando no site". O site abre, você faz a
+     compra com o mouse e cada clique ou digitação vira um passo. Feche a
+     janela (ou clique em "Terminar") e escolha "Substituir" ou "Adicionar".
+   - Adicione passos à mão e, no campo Alvo, clique em "🎯 Apontar". O site
+     abre no ponto certo e você só clica no botão ou campo desejado.
+   - Escreva o alvo você mesmo: o texto do botão, do link ou do rótulo do campo.
+
+3. Escreva as legendas nos passos em que o texto deve mudar.
+
+4. Escolha o formato à direita: Desktop, Tablet em pé, Tablet deitado ou
+   Celular. O site é aberto de verdade naquele tamanho.
+   Se um passo só existe em um aparelho (por exemplo, a barra de compra do
+   celular), escolha "só celular" na lista ao lado da legenda.
+
+5. Clique em "Testar" para conferir os passos (sem gerar vídeo).
+
+6. Clique em "● Gravar vídeo" (formato escolhido) ou em
+   "Gravar nos 3 formatos" (desktop, tablet e celular, um após o outro).
+   Os MP4 ficam na pasta "videos".
+
+7. Para trocar fundo, zoom, legenda ou música, use "Remontar a última
+   gravação". O vídeo é montado de novo sem refazer a compra.
+
+Dicas para o "alvo"
+  Comprar [2]           → o segundo elemento com esse texto
+  css: #billing_email   → seletor CSS (útil no checkout do WooCommerce)
+  texto: Pix            → exige o texto exato
+
+Música: coloque arquivos .mp3 na pasta "musicas" e escolha no painel.
+
+------------------------------------------------------------------------------
+CUIDADOS
+------------------------------------------------------------------------------
+- Use dados fictícios (nome, e-mail, CPF, endereço).
+- Não finalize pagamentos reais. Pare antes de "Finalizar pedido", ou use um
+  cupom ou o modo de teste do gateway. Apague os pedidos de teste no WooCommerce.
+- Senhas digitadas num roteiro ficam salvas no arquivo. Use um usuário de teste.
+- Ainda não funciona: campos dentro de iframes (ex.: cartão do Mercado Pago),
+  upload de arquivos e captchas.
+- O roteiro "Editora Heras - Compra (ajustar)" é um ponto de partida. Use o
+  "🎯 Apontar" nos passos que falharem no "Testar".
+
+Pastas
+  roteiros\    seus roteiros (.json; dá para copiar e compartilhar)
+  videos\      vídeos prontos
+  musicas\     músicas de fundo
+  .gravacoes\  gravações brutas usadas pelo "Remontar"

@@ -1,0 +1,74 @@
+name: Instalador Windows
+
+# Gera o EstudioDemo-Setup.exe.
+# - Automático: ao publicar uma tag de versão (ex.: git tag v1.1.0 && git push --tags)
+#   o .exe é anexado a uma Release do GitHub.
+# - Manual: aba "Actions" → "Instalador Windows" → "Run workflow"
+#   (o .exe fica em "Artifacts" no fim da execução).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  instalador:
+    runs-on: windows-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}\navegadores
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Versão
+        id: versao
+        shell: pwsh
+        run: |
+          $v = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".TrimStart('v') } else { (Get-Content package.json | ConvertFrom-Json).version }
+          "valor=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Dependências (Windows)
+        run: npm ci --omit=dev --no-audit --no-fund
+
+      - name: Chromium embutido
+        run: npx playwright install chromium
+
+      - name: Node portátil
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build\node | Out-Null
+          Copy-Item (Get-Command node).Source build\node\node.exe
+
+      - name: Conferir se o app sobe
+        shell: pwsh
+        run: |
+          $env:NAO_ABRIR = "1"
+          $p = Start-Process -FilePath build\node\node.exe -ArgumentList server.js -PassThru -NoNewWindow
+          Start-Sleep -Seconds 4
+          $r = Invoke-WebRequest http://127.0.0.1:4580/api/estado -UseBasicParsing
+          Stop-Process -Id $p.Id -Force
+          if ($r.StatusCode -ne 200) { throw "servidor não respondeu" }
+
+      - name: Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Gerar instalador
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DVersao=${{ steps.versao.outputs.valor }}" instalador\estudio-demo.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EstudioDemo-Setup
+          path: dist/*.exe
+
+      - name: Publicar na Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estúdio Demo</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="/favicon.ico">
+</head>
+<body>
+<header class="topo">
+  <div class="marca"><img src="icone.png" alt="" width="26" height="26"> Estúdio Demo</div>
+  <div class="roteiro-sel">
+    <select id="lista-roteiros" title="Roteiros salvos"></select>
+    <button class="sec" id="btn-novo">+ Novo</button>
+    <button class="sec" id="btn-duplicar">Duplicar</button>
+    <button class="sec perigo" id="btn-excluir">Excluir</button>
+  </div>
+  <div class="acoes">
+    <span id="aviso-salvo" class="aviso"></span>
+    <button class="sec" id="btn-salvar">Salvar</button>
+    <button class="sec" id="btn-testar" title="Roda os passos rápido, com o navegador aberto, sem gerar vídeo">Testar</button>
+    <button class="pri" id="btn-gravar" title="Grava no formato escolhido à direita">● Gravar vídeo</button>
+    <button class="sec" id="btn-todos" title="Grava desktop, tablet e celular, um depois do outro">Gravar nos 3 formatos</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="coluna passos-col">
+    <div class="cab">
+      <input id="nome-roteiro" class="nome" placeholder="Nome do roteiro">
+      <button class="link" id="btn-ajuda">Como escrever os passos?</button>
+    </div>
+    <div id="ajuda" class="ajuda" hidden>
+      <p><b>Alvo</b> é o que o sistema procura na página. Escreva o <b>texto que aparece no site</b>: o nome do botão ("Finalizar compra"), do link ("Nossos Rituais") ou o rótulo do campo ("E-mail", "CEP").</p>
+      <ul>
+        <li>Se o texto aparece mais de uma vez, diga qual: <code>Comprar [2]</code> pega o segundo.</li>
+        <li>Para usar um seletor CSS: <code>css: #billing_email</code>, ou comece direto com <code>#</code> ou <code>.</code></li>
+        <li>Para exigir o texto exato: <code>texto: Pix</code></li>
+        <li><b>Legenda</b> aparece a partir daquele passo e fica até a próxima. Para apagar, escreva <code>-</code>.</li>
+        <li>Não sabe o texto certo? Clique em <b>🎯 Apontar</b> ao lado do alvo: o site abre e você só clica no botão ou campo.</li>
+        <li>Quer começar do zero? <b>◉ Criar passos navegando</b>: você faz a compra com o mouse e os passos são anotados sozinhos.</li>
+        <li>Se o site muda no celular (ex.: botão diferente), escolha em quais formatos cada passo acontece, na lista ao lado da legenda.</li>
+        <li>Use <b>Testar</b> para conferir os passos antes de gravar. Se algo falhar, o painel mostra onde e uma foto da tela.</li>
+        <li>Use dados fictícios (nome, e-mail, CPF) e não finalize pagamentos reais.</li>
+      </ul>
+    </div>
+    <ol id="passos" class="passos"></ol>
+    <div class="add">
+      <button class="pri" id="btn-navegar" title="Abre o site; você navega e o sistema anota os passos sozinho">◉ Criar passos navegando no site</button>
+      <button class="sec" data-add="clicar">+ Clicar</button>
+      <button class="sec" data-add="digitar">+ Digitar</button>
+      <button class="sec" data-add="abrir">+ Abrir página</button>
+      <button class="sec" data-add="rolar">+ Rolar</button>
+      <button class="sec" data-add="esperar">+ Pausa</button>
+      <select id="add-outro" class="sec">
+        <option value="">Outros…</option>
+        <option value="selecionar">Escolher opção (lista)</option>
+        <option value="passar">Passar o mouse</option>
+        <option value="tecla">Apertar tecla</option>
+        <option value="aguardar">Aguardar aparecer</option>
+        <option value="legenda">Só mostrar legenda</option>
+      </select>
+    </div>
+  </section>
+
+  <aside class="coluna lado">
+    <div class="painel" id="status">
+      <div class="status-linha"><span id="st-fase" class="fase">Parado</span><span id="st-msg">Pronto para gravar.</span></div>
+      <div class="barra"><div id="st-barra"></div></div>
+      <div id="st-erro" class="erro" hidden></div>
+      <img id="st-erro-img" class="erro-img" hidden alt="Tela no momento do erro">
+      <div class="linha-btn">
+        <button class="pri" id="btn-terminar" hidden>Terminar e usar os passos</button>
+        <button class="sec" id="btn-cancelar" hidden>Cancelar</button>
+      </div>
+      <div id="captura" class="captura" hidden>
+        <b id="captura-titulo"></b>
+        <ol id="captura-lista"></ol>
+        <div class="linha-btn" id="captura-acoes">
+          <button class="pri" id="cap-substituir">Substituir os passos</button>
+          <button class="sec" id="cap-adicionar">Adicionar ao final</button>
+          <button class="sec perigo" id="cap-descartar">Descartar</button>
+        </div>
+      </div>
+      <div id="resultado" hidden>
+        <div id="res-abas" class="abas"></div>
+        <video id="video" controls playsinline></video>
+        <div class="linha-btn">
+          <a class="pri" id="btn-baixar" download>Baixar MP4</a>
+          <button class="sec" id="btn-pasta">Abrir pasta dos vídeos</button>
+        </div>
+      </div>
+      <button class="sec largo" id="btn-remontar" hidden title="Usa a última gravação e só aplica os efeitos de novo — não precisa refazer a compra">↻ Remontar a última gravação com estes efeitos</button>
+    </div>
+
+    <div class="painel">
+      <h3>Aparência do vídeo</h3>
+      <label class="campo">Formato
+        <div class="seg seg4" data-cfg="formato">
+          <button data-v="horizontal">🖥 Desktop</button>
+          <button data-v="tablet">Tablet em pé</button>
+          <button data-v="tablet-deitado">Tablet deitado</button>
+          <button data-v="vertical">📱 Celular</button>
+        </div>
+        <small class="dica" id="dica-formato"></small>
+      </label>
+      <label class="check"><input type="checkbox" data-cfg="moldura"> Moldura com fundo colorido</label>
+      <div class="campo">Fundo
+        <div class="cores" id="cores"></div>
+      </div>
+      <label class="check"><input type="checkbox" data-cfg="mostrarUrl"> Mostrar endereço do site na barra</label>
+      <label class="campo">Zoom nos cliques: <b id="zoom-v"></b>
+        <input type="range" min="1" max="2.6" step="0.1" data-cfg="zoom">
+      </label>
+      <label class="check"><input type="checkbox" data-cfg="cursor"> Mostrar cursor e cliques</label>
+      <label class="campo">Estilo da legenda
+        <div class="seg" data-cfg="estiloLegenda">
+          <button data-v="escuro">Escura</button>
+          <button data-v="claro">Clara</button>
+        </div>
+      </label>
+    </div>
+
+    <div class="painel">
+      <h3>Gravação</h3>
+      <label class="campo">Ritmo
+        <div class="seg" data-cfg="velocidade">
+          <button data-v="lenta">Calmo</button>
+          <button data-v="normal">Normal</button>
+          <button data-v="rapida">Rápido</button>
+        </div>
+      </label>
+      <label class="check"><input type="checkbox" data-cfg="acelerarCarregamentos"> Encurtar o tempo de carregamento das páginas</label>
+      <label class="campo">Qualidade
+        <div class="seg" data-cfg="qualidade">
+          <button data-v="alta">Alta</button>
+          <button data-v="maxima">Máxima (mais lento)</button>
+        </div>
+      </label>
+      <label class="campo">Quadros por segundo
+        <div class="seg" data-cfg="fps">
+          <button data-v="30">30</button>
+          <button data-v="60">60</button>
+        </div>
+      </label>
+      <label class="campo">Música de fundo
+        <div class="linha-btn">
+          <select data-cfg="musica" id="musicas"></select>
+          <button class="sec" id="btn-pasta-musicas" title="Coloque arquivos .mp3 nesta pasta">Pasta</button>
+        </div>
+      </label>
+      <label class="campo">Volume da música: <b id="vol-v"></b>
+        <input type="range" min="0.1" max="1" step="0.05" data-cfg="volumeMusica">
+      </label>
+      <label class="check"><input type="checkbox" data-cfg="mostrarNavegador"> Mostrar o navegador enquanto grava</label>
+    </div>
+
+    <div class="painel" id="painel-videos">
+      <h3>Vídeos recentes</h3>
+      <ul id="videos" class="videos"></ul>
+    </div>
+  </aside>
+</main>
+
+<template id="tpl-passo">
+  <li class="passo">
+    <div class="p-cab">
+      <span class="num"></span>
+      <select class="acao"></select>
+      <span class="espaco"></span>
+      <button class="ic" data-op="subir" title="Subir">↑</button>
+      <button class="ic" data-op="descer" title="Descer">↓</button>
+      <button class="ic" data-op="duplicar" title="Duplicar">⧉</button>
+      <button class="ic perigo" data-op="remover" title="Remover">✕</button>
+    </div>
+    <div class="p-campos"></div>
+    <div class="p-pe">
+      <input class="legenda" placeholder="Legenda (opcional) — ex.: 1. Escolha seu livro">
+      <select class="formatos" title="Em quais formatos este passo acontece">
+        <option value="">todos os formatos</option>
+        <option value="desktop">só desktop</option>
+        <option value="tablet">só tablet</option>
+        <option value="celular">só celular</option>
+        <option value="desktop,tablet">desktop e tablet</option>
+        <option value="tablet,celular">tablet e celular</option>
+      </select>
+      <label class="zoom-chk"><input type="checkbox" class="zoom"> zoom</label>
+    </div>
+  </li>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>

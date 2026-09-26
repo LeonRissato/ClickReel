@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Compositor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow: hidden; background: #000; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; }
+  #palco { position: absolute; left: 0; top: 0; overflow: hidden; }
+  #fundo { position: absolute; inset: 0; }
+  #brilho { position: absolute; inset: 0; background:
+      radial-gradient(1200px 700px at 15% 10%, rgba(255,255,255,.18), transparent 60%),
+      radial-gradient(900px 600px at 90% 95%, rgba(0,0,0,.25), transparent 60%); }
+  #janela { position: absolute; overflow: hidden; }
+  #janela.navegador { border-radius: 16px; box-shadow: 0 50px 120px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.12); background: #fff; }
+  #janela.celular { background: #0c0c0e; box-shadow: 0 50px 120px rgba(0,0,0,.5), inset 0 0 0 3px #2a2a30; }
+  #janela.nua { box-shadow: none; }
+  #barra { position: absolute; left: 0; right: 0; top: 0; background: linear-gradient(#f7f7f8, #ececef); border-bottom: 1px solid #d9d9de; display: flex; align-items: center; }
+  .ponto { width: 14px; height: 14px; border-radius: 50%; margin-left: 9px; }
+  .ponto:first-child { margin-left: 20px; }
+  #url { position: absolute; left: 50%; transform: translateX(-50%); top: 9px; height: 28px; width: 46%; background: #fff; border: 1px solid #dcdce2; border-radius: 8px; color: #3a3a44; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; overflow: hidden; padding: 0 14px; }
+  #url svg { flex: none; }
+  #url span { overflow: hidden; text-overflow: ellipsis; }
+  #ilha { position: absolute; background: #000; border-radius: 30px; }
+  #conteudo { position: absolute; overflow: hidden; background: #fff; }
+  #camera { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #quadro { position: absolute; left: 0; top: 0; display: block; }
+  #ripple { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0; }
+  #cursor { position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: none; }
+  #cursor.toque { border-radius: 50%; background: rgba(255,255,255,.55); border: 3px solid rgba(20,20,30,.55); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+  #legenda { position: absolute; left: 0; right: 0; display: flex; justify-content: center; align-items: center; pointer-events: none; }
+  #legenda span { display: inline-block; font-weight: 700; letter-spacing: -.01em; text-align: center; border-radius: 999px; line-height: 1.2; max-width: 88%; }
+  #legenda.escuro span { background: rgba(14,14,20,.82); color: #fff; box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+  #legenda.claro span { background: rgba(255,255,255,.95); color: #17171c; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+</style>
+</head>
+<body>
+<div id="palco">
+  <div id="fundo"></div><div id="brilho"></div>
+  <div id="janela">
+    <div id="barra">
+      <div class="ponto" style="background:#ff5f57"></div>
+      <div class="ponto" style="background:#febc2e"></div>
+      <div class="ponto" style="background:#28c840"></div>
+      <div id="url"><svg width="13" height="15" viewBox="0 0 13 15"><rect x="1" y="6.5" width="11" height="8" rx="2" fill="#6b6b76"/><path d="M3.5 6.5V4.5a3 3 0 0 1 6 0v2" fill="none" stroke="#6b6b76" stroke-width="1.8"/></svg><span></span></div>
+    </div>
+    <div id="conteudo">
+      <div id="camera">
+        <img id="quadro" alt="">
+        <div id="ripple"></div>
+        <div id="cursor"></div>
+      </div>
+    </div>
+    <div id="ilha"></div>
+  </div>
+  <div id="legenda"><span></span></div>
+</div>
+<script>
+const FUNDOS = {
+  ameixa: 'linear-gradient(135deg,#3a1257 0%,#8e2c74 55%,#d0566c 100%)',
+  oceano: 'linear-gradient(135deg,#0b2447 0%,#19376d 45%,#23a6b8 100%)',
+  'por-do-sol': 'linear-gradient(135deg,#f0626b 0%,#f79b5b 55%,#fcd280 100%)',
+  grafite: 'linear-gradient(135deg,#141619 0%,#2b2f36 60%,#434954 100%)',
+  floresta: 'linear-gradient(135deg,#0d3b36 0%,#1f6f50 55%,#8fbf4d 100%)',
+  claro: 'linear-gradient(135deg,#f3eefb 0%,#e3dcf1 55%,#d4e4f7 100%)'
+};
+const SETA = '<svg viewBox="0 0 24 34" width="100%" height="100%"><path d="M2 2 L2 27 L8.3 21.2 L12.4 31 L17 29 L12.9 19.4 L21.5 19.4 Z" fill="#fff" stroke="#111" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const lerp = (a, b, p) => a + (b - a) * p;
+
+let L, C, S, BASE, VP, geo, cam, legendas, vertical, raioToque = 17;
+let quadroAtual = '';
+
+function ultimoAte(lista, t, chave = 't') {
+  let lo = 0, hi = lista.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (lista[m][chave] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
+
+window.iniciar = function (linha, config, saida, base) {
+  L = linha; C = config; S = saida; BASE = base; VP = linha.viewport;
+  const formato = linha.formato || C.formato || 'horizontal';
+  const aparelho = formato === 'horizontal' ? 'navegador' : formato === 'vertical' ? 'celular' : 'tablet';
+  vertical = aparelho !== 'navegador';          // cursor de toque (círculo) em celular e tablet
+  const retrato = S.height > S.width;           // legenda em cima (retrato) ou embaixo (paisagem)
+  raioToque = aparelho === 'tablet' ? 22 : 17;
+  legendas = (L.passos || []).filter((p) => p.legenda && p.legenda.trim()).map((p) => ({ t: p.t0, texto: p.legenda.trim() }));
+  const temLegenda = legendas.some((l) => l.texto !== '-');
+
+  const palco = $('palco');
+  palco.style.width = S.width + 'px'; palco.style.height = S.height + 'px';
+  const f = C.fundo || 'ameixa';
+  $('fundo').style.background = FUNDOS[f] || (/^#[0-9a-f]{6}$/i.test(f) ? `linear-gradient(135deg, ${f}, color-mix(in srgb, ${f} 55%, #000))` : FUNDOS.ameixa);
+  $('brilho').style.display = C.moldura ? '' : 'none';
+
+  const j = $('janela'), barra = $('barra'), cont = $('conteudo'), ilha = $('ilha'), leg = $('legenda');
+  leg.className = C.estiloLegenda === 'claro' ? 'claro' : 'escuro';
+  const span = leg.querySelector('span');
+  const ratio = VP.width / VP.height;
+  const fonte = retrato ? ['56px', '22px 46px'] : ['42px', '16px 40px'];
+  span.style.fontSize = fonte[0]; span.style.padding = fonte[1];
+  geo = {};
+  let raioConteudo = 0;
+
+  if (!C.moldura) {
+    j.className = 'nua'; barra.style.display = 'none'; ilha.style.display = 'none';
+    let w = S.width, h = w / ratio;
+    if (h > S.height) { h = S.height; w = h * ratio; }
+    Object.assign(geo, { cw: w, ch: h, jx: (S.width - w) / 2, jy: (S.height - h) / 2, cx: 0, cy: 0 });
+    Object.assign(j.style, { left: geo.jx + 'px', top: geo.jy + 'px', width: w + 'px', height: h + 'px', borderRadius: '0' });
+    Object.assign(leg.style, retrato ? { top: '150px', height: '220px', bottom: '' } : { bottom: '60px', height: '140px', top: '' });
+  } else if (aparelho === 'navegador') {
+    j.className = 'navegador'; ilha.style.display = 'none';
+    const B = C.mostrarUrl === false ? 0 : 46, P = temLegenda ? 54 : 72, CA = temLegenda ? 150 : 0;
+    const ch = S.height - P - B - CA - (temLegenda ? 26 : P);
+    const cw = ch * ratio;
+    Object.assign(geo, { cw, ch, jx: (S.width - cw) / 2, jy: P, cx: 0, cy: B });
+    Object.assign(j.style, { left: geo.jx + 'px', top: geo.jy + 'px', width: cw + 'px', height: (ch + B) + 'px' });
+    barra.style.height = B + 'px'; barra.style.display = B ? 'flex' : 'none';
+    Object.assign(leg.style, { top: (geo.jy + ch + B) + 'px', height: (S.height - (geo.jy + ch + B)) + 'px' });
+  } else {
+    // celular ou tablet: aparelho centralizado, legenda em cima (retrato) ou embaixo (paisagem)
+    j.className = 'celular'; barra.style.display = 'none';
+    const cel = aparelho === 'celular';
+    const bz = cel ? 20 : 28;
+    const CA = temLegenda ? (retrato ? 330 : 150) : 0;
+    const mx = retrato ? 70 : 90, my = retrato ? 90 : 46;
+    const dispW = S.width - 2 * mx - 2 * bz;
+    const dispH = S.height - 2 * my - CA - 2 * bz;
+    let cw = dispW, ch = cw / ratio;
+    if (ch > dispH) { ch = dispH; cw = ch * ratio; }
+    const jw = cw + 2 * bz, jh = ch + 2 * bz;
+    const y0 = (S.height - jh - CA) / 2;
+    const jy = retrato ? y0 + CA : y0;
+    Object.assign(geo, { cw, ch, jx: (S.width - jw) / 2, jy, cx: bz, cy: bz });
+    Object.assign(j.style, { left: geo.jx + 'px', top: geo.jy + 'px', width: jw + 'px', height: jh + 'px', borderRadius: (cel ? 78 : 52) + 'px' });
+    if (cel) Object.assign(ilha.style, { display: '', width: (cw * 0.3) + 'px', height: '34px', borderRadius: '30px', left: (jw / 2 - cw * 0.15) + 'px', top: (bz + 14) + 'px' });
+    else if (retrato) Object.assign(ilha.style, { display: '', width: '12px', height: '12px', borderRadius: '50%', background: '#2b2b33', left: (jw / 2 - 6) + 'px', top: (bz / 2 - 6) + 'px' });
+    else Object.assign(ilha.style, { display: '', width: '12px', height: '12px', borderRadius: '50%', background: '#2b2b33', left: (bz / 2 - 6) + 'px', top: (jh / 2 - 6) + 'px' });
+    Object.assign(leg.style, retrato ? { top: y0 + 'px', height: CA + 'px' } : { top: (y0 + jh) + 'px', height: CA + 'px' });
+    raioConteudo = cel ? 58 : 26;
+  }
+  Object.assign(cont.style, { left: geo.cx + 'px', top: geo.cy + 'px', width: geo.cw + 'px', height: geo.ch + 'px', borderRadius: raioConteudo + 'px' });
+
+  const img = $('quadro');
+  img.style.width = VP.width + 'px'; img.style.height = VP.height + 'px';
+  const camEl = $('camera');
+  camEl.style.width = VP.width + 'px'; camEl.style.height = VP.height + 'px';
+
+  const cur = $('cursor');
+  if (C.cursor === false) cur.style.display = 'none';
+  if (vertical) { cur.className = 'toque'; cur.style.width = cur.style.height = (raioToque * 2) + 'px'; cur.innerHTML = ''; }
+  else { cur.innerHTML = SETA; cur.style.width = '22px'; cur.style.height = '31px'; }
+
+  montarCamera();
+};
+
+// ---------- câmera (zoom automático) ----------
+function retanguloPara(box) {
+  const Z = Math.max(1, Number(C.zoom) || 1);
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+  let s = Math.min(Z, (0.8 * VP.width) / Math.max(1, box.width), (0.8 * VP.height) / Math.max(1, box.height));
+  s = Math.max(1, s);
+  const w = VP.width / s, h = VP.height / s;
+  return { x: clamp(cx - w / 2, 0, VP.width - w), y: clamp(cy - h / 2, 0, VP.height - h), w };
+}
+function montarCamera() {
+  const base = { x: 0, y: 0, w: VP.width };
+  cam = [{ t: -1e9, r: base }];
+  if ((Number(C.zoom) || 1) <= 1.01) return;
+  const focos = (L.passos || []).filter((p) => p.foco && p.zoom !== false).sort((a, b) => a.inicioFoco - b.inicioFoco);
+  const ENTRA = 0.9, SAI = 1.0;
+  let atual = base;
+  const push = (t, r) => { const ult = cam[cam.length - 1]; if (t <= ult.t) t = ult.t + 0.001; cam.push({ t, r }); };
+  focos.forEach((f, i) => {
+    const r = retanguloPara(f.foco);
+    const a = Math.max(f.inicioFoco - 0.3, cam[cam.length - 1].t);
+    push(a, atual);
+    push(a + ENTRA, r);
+    atual = r;
+    const prox = focos[i + 1];
+    const saida = Math.max(f.fimFoco + 0.5, a + ENTRA + 0.2);
+    const trocouPagina = prox && (L.urls || []).some((u) => u.t > f.fimFoco - 0.5 && u.t < prox.inicioFoco);
+    if (!prox || trocouPagina || prox.inicioFoco - 0.3 - saida > 1.2) {
+      push(saida, r);
+      push(saida + SAI, base);
+      atual = base;
+    } else {
+      push(Math.max(saida - 0.4, a + ENTRA), r);
+    }
+  });
+}
+function cameraEm(t) {
+  const i = ultimoAte(cam, t);
+  const a = cam[Math.max(0, i)], b = cam[i + 1];
+  if (!b) return a.r;
+  const p = ease(clamp((t - a.t) / (b.t - a.t), 0, 1));
+  return { x: lerp(a.r.x, b.r.x, p), y: lerp(a.r.y, b.r.y, p), w: lerp(a.r.w, b.r.w, p) };
+}
+
+// ---------- cursor ----------
+function cursorEm(t) {
+  const c = L.cursor; const i = ultimoAte(c, t);
+  if (i < 0) return c[0];
+  const a = c[i], b = c[i + 1];
+  if (!b || b.t - a.t > 0.25) return a;
+  const p = clamp((t - a.t) / (b.t - a.t), 0, 1);
+  return { x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), t: a.t };
+}
+
+function carregar(nome) {
+  if (nome === quadroAtual) return Promise.resolve();
+  quadroAtual = nome;
+  const img = $('quadro');
+  img.src = BASE + nome;
+  return img.decode().catch(() => {});
+}
+
+window.desenhar = async function (t, o) {
+  // quadro da tela gravada
+  const qi = ultimoAte(L.quadros, t);
+  const q = L.quadros[Math.max(0, qi)];
+  if (q) await carregar(q.f);
+
+  // câmera
+  const r = cameraEm(t);
+  const escala = geo.cw / r.w;
+  $('camera').style.transform = `translate(${-r.x * escala}px, ${-r.y * escala}px) scale(${escala})`;
+  const zoomRel = VP.width / r.w;
+
+  // cursor
+  const cur = $('cursor');
+  const pos = cursorEm(t);
+  let aperto = 1, opac = 1;
+  const ci = ultimoAte(L.cliques, t + 0.12);
+  const clique = ci >= 0 ? L.cliques[ci] : null;
+  if (clique) { const d = t - clique.t; if (d > -0.12 && d < 0.2) aperto = 0.82; }
+  if (vertical) {
+    const ultMov = L.cursor[Math.max(0, ultimoAte(L.cursor, t))].t;
+    const ativo = Math.max(t - ultMov < 0.08 ? 1 : clamp(1 - (t - ultMov - 0.25) / 0.35, 0, 1),
+      clique && t - clique.t < 0.6 && t - clique.t > -0.3 ? 1 : 0);
+    opac = ativo;
+  }
+  const escCur = aperto / Math.sqrt(zoomRel);
+  if (vertical) cur.style.transform = `translate(${pos.x - raioToque * escCur}px, ${pos.y - raioToque * escCur}px) scale(${escCur})`;
+  else cur.style.transform = `translate(${pos.x - 3 * escCur}px, ${pos.y - 2 * escCur}px) scale(${escCur * 1.25})`;
+  cur.style.opacity = opac;
+
+  // onda do clique
+  const rp = $('ripple');
+  if (clique && t - clique.t >= 0 && t - clique.t < 0.55) {
+    const p = (t - clique.t) / 0.55;
+    const raio = (10 + 32 * ease(p)) / Math.sqrt(zoomRel);
+    Object.assign(rp.style, {
+      opacity: String(1 - p), width: raio * 2 + 'px', height: raio * 2 + 'px',
+      left: clique.x - raio + 'px', top: clique.y - raio + 'px',
+      border: `${3 / Math.sqrt(zoomRel)}px solid rgba(255,255,255,.95)`,
+      background: 'rgba(255,196,0,.28)', boxShadow: '0 0 0 2px rgba(0,0,0,.25)'
+    });
+  } else rp.style.opacity = '0';
+
+  // barra de endereço
+  if (L.urls && L.urls.length) {
+    const u = L.urls[Math.max(0, ultimoAte(L.urls, t))].url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const s = document.querySelector('#url span'); if (s.textContent !== u) s.textContent = u;
+  }
+
+  // legenda
+  const leg = $('legenda'), span = leg.querySelector('span');
+  const li = ultimoAte(legendas, t + 0.05);
+  if (li >= 0 && legendas[li].texto !== '-') {
+    const l = legendas[li];
+    if (span.textContent !== l.texto) span.textContent = l.texto;
+    const p = ease(clamp((t - l.t + 0.05) / 0.4, 0, 1));
+    leg.style.opacity = String(p);
+    span.style.transform = `translateY(${(1 - p) * 24}px) scale(${0.96 + 0.04 * p})`;
+  } else leg.style.opacity = '0';
+};
+</script>
+</body>
+</html>

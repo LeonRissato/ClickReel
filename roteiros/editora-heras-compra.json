@@ -1,0 +1,16 @@
+{
+  "nome": "Editora Heras - Compra (ajustar)",
+  "passos": [
+    { "acao": "abrir", "url": "https://editoraheras.com.br/", "legenda": "Comprar na Editora Heras é simples" },
+    { "acao": "clicar", "alvo": "Nossos Rituais", "legenda": "1. Escolha o seu livro" },
+    { "acao": "clicar", "alvo": "Comprar", "legenda": "2. Adicione ao carrinho" },
+    { "acao": "aguardar", "alvo": "Finalizar compra" },
+    { "acao": "clicar", "alvo": "Finalizar compra", "legenda": "3. Vá para o pagamento" },
+    { "acao": "digitar", "alvo": "Nome", "texto": "Maria", "legenda": "4. Preencha seus dados" },
+    { "acao": "digitar", "alvo": "Sobrenome", "texto": "Oliveira" },
+    { "acao": "digitar", "alvo": "E-mail", "texto": "maria@exemplo.com" },
+    { "acao": "digitar", "alvo": "CEP", "texto": "01310-100" },
+    { "acao": "esperar", "segundos": "2", "legenda": "5. Escolha o frete e a forma de pagamento" }
+  ],
+  "config": { "formato": "horizontal", "moldura": true, "fundo": "ameixa", "zoom": 1.8, "velocidade": "normal" }
+}

@@ -1,0 +1,333 @@
+// Estúdio Demo — painel local para gravar vídeos de demonstração do site.
+// Abra com "ABRIR-PAINEL.bat" (Windows) ou "node server.js".
+// Na versão instalada (.exe) o Chromium vem dentro da pasta "navegadores".
+{
+  const embutido = require('path').join(__dirname, 'navegadores');
+  if (!process.env.PLAYWRIGHT_BROWSERS_PATH && require('fs').existsSync(embutido)) process.env.PLAYWRIGHT_BROWSERS_PATH = embutido;
+}
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+const { gravar } = require('./lib/gravador');
+const { renderizar } = require('./lib/renderizador');
+const { apontar } = require('./lib/apontador');
+const { capturar } = require('./lib/captura');
+const { comPadrao, FORMATOS, TRES_FORMATOS, passoValeNoFormato } = require('./lib/config');
+
+const PORTA = Number(process.env.PORTA || 4580);
+const RAIZ = __dirname;
+const P = {
+  publico: path.join(RAIZ, 'public'),
+  demo: path.join(RAIZ, 'demo'),
+  roteiros: path.join(RAIZ, 'roteiros'),
+  videos: path.join(RAIZ, 'videos'),
+  musicas: path.join(RAIZ, 'musicas'),
+  jobs: path.join(RAIZ, '.gravacoes')
+};
+for (const d of [P.roteiros, P.videos, P.musicas, P.jobs]) fs.mkdirSync(d, { recursive: true });
+
+const TIPOS = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+  '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webp': 'image/webp', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg'
+};
+
+// ---------------- estado (um trabalho por vez) ----------------
+// ultimas: { formato: jobId } — última gravação de cada formato, usada pelo "Remontar"
+let estado = {
+  ocupado: false, fase: 'parado', mensagem: 'Pronto para gravar.', passo: 0, total: 0, indice: null, pct: 0,
+  video: null, videoNome: null, videos: [], erro: null, erroImagem: null, erroIndice: null, formatoAtual: null,
+  ultimas: {}, captura: null
+};
+let cancelar = false;
+let pararCaptura = false;
+const clientes = new Set();
+function atualizar(mud) {
+  estado = { ...estado, ...mud };
+  const msg = `data: ${JSON.stringify(estado)}\n\n`;
+  for (const c of clientes) c.write(msg);
+}
+const ARQ_ULTIMAS = path.join(P.jobs, 'ultimas.json');
+try {
+  const u = JSON.parse(fs.readFileSync(ARQ_ULTIMAS, 'utf8'));
+  for (const [f, id] of Object.entries(u)) if (fs.existsSync(path.join(P.jobs, id, 'linha-do-tempo.json'))) estado.ultimas[f] = id;
+} catch (_) {}
+
+// ---------------- utilidades ----------------
+const slug = (s) => (String(s || 'roteiro').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'roteiro').slice(0, 60);
+const seguro = (nome) => path.basename(String(nome || ''));
+function json(res, code, obj) {
+  res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(obj));
+}
+function lerCorpo(req) {
+  return new Promise((res, rej) => {
+    let d = '';
+    req.on('data', (c) => { d += c; if (d.length > 5e6) req.destroy(); });
+    req.on('end', () => { try { res(d ? JSON.parse(d) : {}); } catch (e) { rej(e); } });
+    req.on('error', rej);
+  });
+}
+function servirArquivo(req, res, arq) {
+  fs.stat(arq, (err, st) => {
+    if (err || !st.isFile()) { res.writeHead(404); return res.end('Não encontrado'); }
+    const tipo = TIPOS[path.extname(arq).toLowerCase()] || 'application/octet-stream';
+    const range = req.headers.range;
+    if (range) {
+      const m = range.match(/bytes=(\d*)-(\d*)/);
+      const ini = m && m[1] ? parseInt(m[1], 10) : 0;
+      const fim = m && m[2] ? parseInt(m[2], 10) : st.size - 1;
+      res.writeHead(206, { 'Content-Type': tipo, 'Content-Range': `bytes ${ini}-${fim}/${st.size}`, 'Accept-Ranges': 'bytes', 'Content-Length': fim - ini + 1 });
+      return fs.createReadStream(arq, { start: ini, end: fim }).pipe(res);
+    }
+    res.writeHead(200, { 'Content-Type': tipo, 'Content-Length': st.size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache' });
+    fs.createReadStream(arq).pipe(res);
+  });
+}
+function dentro(base, rel) {
+  const alvo = path.normalize(path.join(base, rel));
+  return alvo.startsWith(base) ? alvo : null;
+}
+function abrirNoSistema(alvo) {
+  const cmd = process.platform === 'win32' ? `start "" "${alvo}"` : process.platform === 'darwin' ? `open "${alvo}"` : `xdg-open "${alvo}"`;
+  exec(cmd, () => {});
+}
+function limparGravacoesAntigas(manter = 6) {
+  try {
+    const protegidas = new Set(Object.values(estado.ultimas));
+    const pastas = fs.readdirSync(P.jobs).filter((d) => fs.statSync(path.join(P.jobs, d)).isDirectory()).sort().reverse();
+    for (const d of pastas.slice(manter)) if (!protegidas.has(d)) fs.rmSync(path.join(P.jobs, d), { recursive: true, force: true });
+  } catch (_) {}
+}
+function nomeVideo(roteiro, formato) {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${slug(roteiro.nome)}-${FORMATOS[formato].sufixo}-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.mp4`;
+}
+const comFormato = (roteiro, formato) => ({ ...roteiro, config: { ...comPadrao(roteiro.config), formato } });
+
+// ---------------- gravar / testar ----------------
+async function gravarUmFormato(roteiro, formato, teste, prefixo) {
+  const r = comFormato(roteiro, formato);
+  const jobId = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14) + '-' + FORMATOS[formato].sufixo + '-' + slug(roteiro.nome).slice(0, 20);
+  const jobDir = path.join(P.jobs, jobId);
+  fs.mkdirSync(jobDir, { recursive: true });
+  const total = r.passos.filter((p) => p.acao && passoValeNoFormato(p, formato)).length;
+  atualizar({ fase: teste ? 'testando' : 'gravando', formatoAtual: formato, passo: 0, total, pct: 0, mensagem: `${prefixo}${teste ? 'Testando' : 'Gravando'}…` });
+  try {
+    await gravar({
+      roteiro: r, jobDir, teste,
+      cancelado: () => cancelar,
+      aoProgredir: ({ passo, total, indice, texto }) => atualizar({ passo, total, indice, mensagem: `${prefixo}Passo ${passo} de ${total}: ${texto}` })
+    });
+  } catch (e) {
+    const temImg = fs.existsSync(path.join(jobDir, 'erro.png'));
+    if (!temImg) fs.rmSync(jobDir, { recursive: true, force: true });
+    e.erroImagem = temImg ? `/gravacoes/${jobId}/erro.png` : null;
+    throw e;
+  }
+  if (teste) { fs.rmSync(jobDir, { recursive: true, force: true }); return null; }
+  estado.ultimas = { ...estado.ultimas, [formato]: jobId };
+  fs.writeFileSync(ARQ_ULTIMAS, JSON.stringify(estado.ultimas));
+  atualizar({ ultimas: estado.ultimas });
+  return renderizarJob(jobId, r, prefixo);
+}
+
+async function renderizarJob(jobId, roteiro, prefixo = '') {
+  const lt = JSON.parse(fs.readFileSync(path.join(P.jobs, jobId, 'linha-do-tempo.json'), 'utf8'));
+  const formato = lt.formato || 'horizontal';
+  const nome = nomeVideo(roteiro, formato);
+  atualizar({ fase: 'renderizando', formatoAtual: formato, mensagem: `${prefixo}Montando o vídeo…`, pct: 0 });
+  await renderizar({
+    jobDir: path.join(P.jobs, jobId), jobId,
+    baseUrl: `http://127.0.0.1:${PORTA}`,
+    config: comFormato(roteiro, formato).config,
+    arquivoSaida: path.join(P.videos, nome),
+    pastaMusicas: P.musicas,
+    cancelado: () => cancelar,
+    aoProgredir: ({ pct }) => atualizar({ pct, mensagem: `${prefixo}Montando o vídeo… ${pct}%` })
+  });
+  return { nome, url: `/videos/${encodeURIComponent(nome)}`, formato: FORMATOS[formato].nome };
+}
+
+async function executar(roteiro, modo) {
+  cancelar = false;
+  const teste = modo === 'testar';
+  const formatos = modo === 'todos' ? TRES_FORMATOS : [comPadrao(roteiro.config).formato];
+  atualizar({ ocupado: true, erro: null, erroImagem: null, erroIndice: null, video: null, videos: [], indice: null });
+  const feitos = [];
+  const falhas = [];
+  for (const f of formatos) {
+    const prefixo = formatos.length > 1 ? `${FORMATOS[f].nome} · ` : '';
+    try {
+      const v = await gravarUmFormato(roteiro, f, teste, prefixo);
+      if (v) { feitos.push(v); atualizar({ videos: feitos, video: v.url, videoNome: v.nome }); }
+    } catch (e) {
+      falhas.push({ formato: FORMATOS[f].nome, msg: (e.indice !== undefined ? `Passo ${e.indice + 1}: ` : '') + e.message, img: e.erroImagem, indice: e.indice });
+      if (cancelar) break;
+    }
+  }
+  limparGravacoesAntigas();
+  if (falhas.length) {
+    const f0 = falhas[0];
+    atualizar({
+      ocupado: false, fase: 'erro', indice: null,
+      mensagem: feitos.length ? `${feitos.length} vídeo(s) prontos, mas houve erro.` : 'Algo deu errado.',
+      erro: falhas.map((f) => (formatos.length > 1 ? `[${f.formato}] ` : '') + f.msg).join('\n'),
+      erroImagem: f0.img, erroIndice: f0.indice ?? null
+    });
+  } else if (teste) {
+    atualizar({ ocupado: false, fase: 'testado', indice: null, pct: 100, mensagem: 'Teste concluído: todos os passos funcionaram. Pode gravar o vídeo.' });
+  } else {
+    atualizar({ ocupado: false, fase: 'pronto', indice: null, pct: 100, mensagem: feitos.length > 1 ? `${feitos.length} vídeos prontos!` : 'Vídeo pronto!' });
+  }
+}
+
+// ---------------- rotas ----------------
+const servidor = http.createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://x');
+  const rota = decodeURIComponent(url.pathname);
+  try {
+    if (rota === '/api/estado') return json(res, 200, estado);
+    if (rota === '/api/eventos') {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+      res.write(`data: ${JSON.stringify(estado)}\n\n`);
+      clientes.add(res);
+      req.on('close', () => clientes.delete(res));
+      return;
+    }
+    if (rota === '/api/formatos') return json(res, 200, FORMATOS);
+
+    // roteiros
+    if (rota === '/api/roteiros' && req.method === 'GET') {
+      const lista = fs.readdirSync(P.roteiros).filter((f) => f.endsWith('.json')).map((f) => {
+        try { const r = JSON.parse(fs.readFileSync(path.join(P.roteiros, f), 'utf8')); return { arquivo: f, nome: r.nome || f }; }
+        catch (_) { return { arquivo: f, nome: f + ' (com erro)' }; }
+      }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      return json(res, 200, lista);
+    }
+    const mRot = rota.match(/^\/api\/roteiros\/([^/]+)$/);
+    if (mRot) {
+      const arq = path.join(P.roteiros, seguro(mRot[1]));
+      if (req.method === 'GET') return fs.existsSync(arq) ? json(res, 200, JSON.parse(fs.readFileSync(arq, 'utf8'))) : json(res, 404, { erro: 'Roteiro não encontrado' });
+      if (req.method === 'PUT') { const r = await lerCorpo(req); fs.writeFileSync(arq, JSON.stringify(r, null, 2)); return json(res, 200, { ok: true }); }
+      if (req.method === 'DELETE') { if (fs.existsSync(arq)) fs.unlinkSync(arq); return json(res, 200, { ok: true }); }
+    }
+    if (rota === '/api/novo-arquivo' && req.method === 'POST') {
+      const { nome } = await lerCorpo(req);
+      const base = slug(nome);
+      let f = base + '.json', n = 2;
+      while (fs.existsSync(path.join(P.roteiros, f))) f = `${base}-${n++}.json`;
+      return json(res, 200, { arquivo: f });
+    }
+    if (rota === '/api/musicas') return json(res, 200, fs.readdirSync(P.musicas).filter((f) => /\.(mp3|m4a|wav|aac|ogg)$/i.test(f)));
+    if (rota === '/api/videos') {
+      const v = fs.readdirSync(P.videos).filter((f) => f.endsWith('.mp4'))
+        .map((f) => ({ nome: f, url: `/videos/${encodeURIComponent(f)}`, data: fs.statSync(path.join(P.videos, f)).mtimeMs }))
+        .sort((a, b) => b.data - a.data).slice(0, 15);
+      return json(res, 200, v);
+    }
+
+    // gravar / testar / todos
+    if (rota === '/api/executar' && req.method === 'POST') {
+      if (estado.ocupado) return json(res, 409, { erro: 'Já existe um trabalho em andamento.' });
+      const { roteiro, modo } = await lerCorpo(req);
+      if (!roteiro || !Array.isArray(roteiro.passos) || !roteiro.passos.length) return json(res, 400, { erro: 'O roteiro está vazio.' });
+      executar(roteiro, modo);
+      return json(res, 200, { ok: true });
+    }
+    // remontar a última gravação do formato atual
+    if (rota === '/api/renderizar' && req.method === 'POST') {
+      if (estado.ocupado) return json(res, 409, { erro: 'Já existe um trabalho em andamento.' });
+      const { roteiro } = await lerCorpo(req);
+      const formato = comPadrao(roteiro && roteiro.config).formato;
+      const jobId = estado.ultimas[formato];
+      if (!jobId) return json(res, 400, { erro: `Ainda não há gravação no formato ${FORMATOS[formato].nome}. Clique em "Gravar vídeo".` });
+      cancelar = false;
+      atualizar({ ocupado: true, erro: null, erroImagem: null, erroIndice: null, videos: [] });
+      renderizarJob(jobId, roteiro)
+        .then((v) => atualizar({ ocupado: false, fase: 'pronto', pct: 100, mensagem: 'Vídeo pronto!', video: v.url, videoNome: v.nome, videos: [v] }))
+        .catch((e) => atualizar({ ocupado: false, fase: 'erro', erro: e.message, mensagem: 'Algo deu errado.' }));
+      return json(res, 200, { ok: true });
+    }
+
+    // apontar no site (a resposta só volta quando o usuário clicar)
+    if (rota === '/api/apontar' && req.method === 'POST') {
+      if (estado.ocupado) return json(res, 409, { erro: 'Já existe um trabalho em andamento.' });
+      const { roteiro, indice } = await lerCorpo(req);
+      cancelar = false;
+      atualizar({ ocupado: true, fase: 'apontando', indice, erro: null, erroImagem: null, erroIndice: null, pct: 0, mensagem: 'Abrindo o site…' });
+      try {
+        const r = await apontar({ roteiro, indice, cancelado: () => cancelar, aoMensagem: (m) => atualizar({ mensagem: m }) });
+        atualizar({ ocupado: false, fase: 'parado', indice: null, mensagem: r.conferir ? `Alvo preenchido: "${r.alvo}". Confira com "Testar".` : `Alvo preenchido: "${r.alvo}".` });
+        return json(res, 200, r);
+      } catch (e) {
+        const cancelou = /^Cancelado/.test(e.message);
+        atualizar({ ocupado: false, fase: cancelou ? 'parado' : 'erro', indice: null, mensagem: cancelou ? 'Apontar cancelado.' : 'Não consegui chegar a esse passo.',
+          erro: cancelou ? null : (e.indice !== undefined ? `Passo ${e.indice + 1}: ` : '') + e.message, erroIndice: e.indice ?? null });
+        return json(res, 400, { erro: e.message, cancelado: cancelou });
+      }
+    }
+
+    // gravar navegando
+    if (rota === '/api/capturar' && req.method === 'POST') {
+      if (estado.ocupado) return json(res, 409, { erro: 'Já existe um trabalho em andamento.' });
+      const { url: endereco, config } = await lerCorpo(req);
+      pararCaptura = false;
+      atualizar({ ocupado: true, fase: 'navegando', erro: null, erroImagem: null, erroIndice: null, captura: null, mensagem: 'Abrindo o site…' });
+      capturar({
+        url: endereco, config,
+        parar: () => pararCaptura,
+        aoPasso: (passos) => atualizar({ captura: passos, mensagem: `Navegue normalmente no site. ${passos.length} passo(s) anotado(s). Quando terminar, feche a janela ou clique em "Terminar".` })
+      })
+        .then((passos) => atualizar({ ocupado: false, fase: 'capturado', captura: passos, mensagem: `${passos.length} passos anotados. Escolha o que fazer com eles.` }))
+        .catch((e) => atualizar({ ocupado: false, fase: 'erro', erro: e.message, mensagem: 'Algo deu errado.' }));
+      return json(res, 200, { ok: true });
+    }
+    if (rota === '/api/capturar/parar' && req.method === 'POST') { pararCaptura = true; return json(res, 200, { ok: true }); }
+    if (rota === '/api/capturar/limpar' && req.method === 'POST') {
+      atualizar({ captura: null, fase: 'parado', mensagem: 'Pronto para gravar.' });
+      return json(res, 200, { ok: true });
+    }
+
+    if (rota === '/api/cancelar' && req.method === 'POST') { cancelar = true; pararCaptura = true; return json(res, 200, { ok: true }); }
+    if (rota === '/api/abrir-pasta' && req.method === 'POST') { abrirNoSistema(P.videos); return json(res, 200, { ok: true }); }
+    if (rota === '/api/abrir-pasta-musicas' && req.method === 'POST') { abrirNoSistema(P.musicas); return json(res, 200, { ok: true }); }
+
+    // arquivos
+    if (rota.startsWith('/jobs/')) { const m = rota.match(/^\/jobs\/([^/]+)\/quadros\/([^/]+)$/); if (m) return servirArquivo(req, res, path.join(P.jobs, seguro(m[1]), 'quadros', seguro(m[2]))); }
+    if (rota.startsWith('/gravacoes/')) { const a = dentro(P.jobs, rota.slice(11)); if (a) return servirArquivo(req, res, a); }
+    if (rota.startsWith('/videos/')) return servirArquivo(req, res, path.join(P.videos, seguro(rota.slice(8))));
+    if (rota === '/demo') { res.writeHead(302, { Location: '/demo/' }); return res.end(); }
+    if (rota.startsWith('/demo/')) {
+      let rel = rota.slice(6) || 'index.html';
+      if (rel.endsWith('/')) rel += 'index.html';
+      const a = dentro(P.demo, rel);
+      if (a) return servirArquivo(req, res, a);
+    }
+    if (rota === '/favicon.ico') return servirArquivo(req, res, path.join(RAIZ, 'estudio.ico'));
+    const rel = rota === '/' ? 'index.html' : rota.slice(1);
+    const a = dentro(P.publico, rel);
+    if (a) return servirArquivo(req, res, a);
+    res.writeHead(404); res.end('Não encontrado');
+  } catch (e) {
+    json(res, 500, { erro: e.message });
+  }
+});
+servidor.requestTimeout = 0; // "Apontar" espera o clique do usuário
+
+servidor.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.log(`\nO painel já está aberto em http://localhost:${PORTA}\n`);
+    abrirNoSistema(`http://localhost:${PORTA}`);
+    setTimeout(() => process.exit(0), 1500);
+  } else throw e;
+});
+
+servidor.listen(PORTA, '127.0.0.1', () => {
+  console.log('\n  Estúdio Demo está rodando.');
+  console.log(`  Painel: http://localhost:${PORTA}`);
+  console.log('  Deixe esta janela aberta enquanto usa. Para encerrar, feche-a.\n');
+  if (!process.env.NAO_ABRIR) abrirNoSistema(`http://localhost:${PORTA}`);
+});
