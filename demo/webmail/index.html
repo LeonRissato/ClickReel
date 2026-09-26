@@ -1,0 +1,22 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Caixa de entrada — Correio Exemplo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",system-ui,sans-serif;background:#f6f8fc;color:#1f1f1f}
+header{display:flex;align-items:center;gap:18px;padding:12px 22px;background:#fff;border-bottom:1px solid #e3e6ea}
+.logo{font-weight:700;font-size:20px;color:#c5221f}.busca{flex:1;max-width:620px;background:#eaf1fb;border-radius:24px;padding:11px 18px;color:#5f6368}
+.lay{display:grid;grid-template-columns:220px 1fr;gap:10px;padding:14px}
+nav div{padding:9px 16px;border-radius:0 18px 18px 0;font-size:14px}nav .on{background:#d3e3fd;font-weight:700}
+.lista,.msg{background:#fff;border-radius:16px;min-height:420px}
+.item{display:grid;grid-template-columns:200px 1fr 70px;gap:14px;padding:13px 20px;border-bottom:1px solid #eef0f3;font-size:14px;cursor:pointer;color:inherit;text-decoration:none}
+.item:hover{box-shadow:inset 1px 0 #dadce0,0 1px 3px rgba(0,0,0,.12)}.item b{font-weight:700}.item span{color:#5f6368;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.vazio{padding:60px;text-align:center;color:#5f6368}
+</style></head><body>
+<header><div class="logo">✉ Correio Exemplo</div><div class="busca">Pesquisar e-mail</div></header>
+<div class="lay"><nav><div class="on">Caixa de entrada</div><div>Com estrela</div><div>Enviados</div><div>Rascunhos</div></nav>
+<div class="lista" id="l"></div></div>
+<script>
+const em=+localStorage.getItem('resetEm')||0;
+const chegou=em&&Date.now()-em>6000;
+document.getElementById('l').innerHTML=(chegou?`<a class="item" href="mensagem.html"><b>Livraria Exemplo</b><span><b>Redefinição de senha</b> — Alguém pediu para redefinir a senha da sua conta…</span><span>agora</span></a>`:'')+
+`<a class="item"><span>Newsletter</span><span>As novidades da semana chegaram</span><span>ontem</span></a><a class="item"><span>Loja de Canecas</span><span>Seu pedido foi enviado</span><span>seg.</span></a>`+
+(chegou?'':'<div class="vazio">Nenhuma mensagem nova. Atualize a página daqui a pouco.</div>');
+</script></body></html>

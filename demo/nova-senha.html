@@ -1,0 +1,7 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nova senha — Livraria Exemplo</title><link rel="stylesheet" href="estilo.css"><script src="loja.js"></script></head><body><script>topo()</script>
+<main><h1>Crie uma senha nova</h1><p class="sub">Use pelo menos 8 caracteres.</p>
+<form id="f" style="grid-template-columns:1fr;max-width:520px">
+<label>Nova senha<input name="s1" type="password"></label><label>Repita a nova senha<input name="s2" type="password"></label>
+<div><button class="btn" type="submit">Salvar senha</button></div></form>
+<div id="ok" class="ok" style="display:none;padding:30px 0;text-align:left"><h1>✓ Senha alterada!</h1><p class="sub">Agora é só entrar com a senha nova.</p></div></main>
+<script>document.getElementById('f').onsubmit=e=>{e.preventDefault();e.target.style.display='none';document.getElementById('ok').style.display='block'}</script></body></html>

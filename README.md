@@ -36,6 +36,9 @@ e moldura de navegador, tablet ou celular.
 - **👁 Prévia rápida**: vídeo leve para conferir antes de montar em alta qualidade.
 - **🔐 Login lembrado**: entre no site uma vez; o ClickReel reaproveita a sessão sem guardar a senha.
 - **Iframes**: encontra campos dentro de janelas embutidas (ex.: cartão do gateway).
+- **Fluxos com e-mail** (ex.: resetar senha): segue links que abrem em outra aba e o passo
+  "Aguardar aparecer" pode recarregar a página até o e-mail chegar. Logins lembrados usam o
+  Google Chrome instalado, quando houver.
 - **☰ Fila**: grava vários roteiros em sequência.
 - **Aviso de atualização** quando sai uma versão nova em Releases.
 - **Qualidade**: tela do Desktop em 1280×720, 1600×900 ou 1920×1080; vídeo em 1080p, 1440p ou 4K;

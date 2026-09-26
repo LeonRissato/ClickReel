@@ -1,0 +1,67 @@
+{
+  "nome": "Exemplo - Resetar senha (demo)",
+  "passos": [
+    {
+      "acao": "abrir",
+      "url": "http://localhost:4580/demo/esqueci-senha.html",
+      "legenda": "Esqueceu a senha? Sem problema"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "E-mail da sua conta",
+      "texto": "maria@exemplo.com",
+      "legenda": "1. Digite o seu e-mail"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Redefinir senha"
+    },
+    {
+      "acao": "abrir",
+      "url": "http://localhost:4580/demo/webmail/",
+      "legenda": "2. Abra o e-mail que enviamos"
+    },
+    {
+      "acao": "aguardar",
+      "alvo": "Redefinição de senha",
+      "segundos": "40",
+      "recarregar": "3"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Redefinição de senha"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Clique aqui para redefinir sua senha",
+      "legenda": "3. Clique no link"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Nova senha",
+      "texto": "NovaSenha123",
+      "legenda": "4. Crie a senha nova"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Repita a nova senha",
+      "texto": "NovaSenha123"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Salvar senha"
+    },
+    {
+      "acao": "esperar",
+      "segundos": "2",
+      "legenda": "Pronto! Senha alterada"
+    }
+  ],
+  "config": {
+    "formato": "horizontal",
+    "moldura": true,
+    "fundo": "oceano",
+    "zoom": 1.8,
+    "velocidade": "normal"
+  }
+}

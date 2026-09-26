@@ -1,0 +1,9 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Esqueci a senha — Livraria Exemplo</title><link rel="stylesheet" href="estilo.css"><script src="loja.js"></script></head><body><script>topo()</script>
+<main><h1>Esqueceu a senha?</h1><p class="sub">Digite seu e-mail e enviaremos um link para criar uma senha nova.</p>
+<form id="f" style="grid-template-columns:1fr;max-width:520px">
+<label>E-mail da sua conta<input name="email" type="email" placeholder="voce@email.com"></label>
+<div><button class="btn" type="submit">Redefinir senha</button></div>
+</form>
+<p id="ok" class="sub" style="display:none;margin-top:20px;font-weight:600;color:#2f7a4f">✓ Pronto! Enviamos o link para o seu e-mail. Ele chega em alguns segundos.</p>
+</main>
+<script>document.getElementById('f').onsubmit=e=>{e.preventDefault();localStorage.setItem('resetEm',Date.now());localStorage.setItem('resetPara',e.target.email.value||'voce@email.com');document.getElementById('ok').style.display='block';e.target.style.display='none'}</script></body></html>

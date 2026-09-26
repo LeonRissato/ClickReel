@@ -1,0 +1,68 @@
+{
+  "nome": "Editora Heras - Resetar senha pelo Gmail (ajustar)",
+  "passos": [
+    {
+      "acao": "abrir",
+      "url": "https://editoraheras.com.br/minha-conta/lost-password/",
+      "legenda": "Esqueceu a senha? Sem problema"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Nome de usuário ou e-mail",
+      "texto": "SEU-EMAIL-DE-TESTE@gmail.com",
+      "legenda": "1. Digite o seu e-mail"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Redefinir senha"
+    },
+    {
+      "acao": "abrir",
+      "url": "https://mail.google.com/mail/u/0/#search/in%3Ainbox+redefini%C3%A7%C3%A3o",
+      "legenda": "2. Abra o e-mail que enviamos"
+    },
+    {
+      "acao": "aguardar",
+      "alvo": "texto: Redefinição de senha",
+      "segundos": "90",
+      "recarregar": "8"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "texto: Redefinição de senha"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Clique aqui para redefinir sua senha",
+      "legenda": "3. Clique no link do e-mail"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Nova senha",
+      "texto": "TROQUE-POR-UMA-SENHA-DE-TESTE",
+      "legenda": "4. Crie a senha nova"
+    },
+    {
+      "acao": "digitar",
+      "alvo": "Repita a nova senha",
+      "texto": "TROQUE-POR-UMA-SENHA-DE-TESTE"
+    },
+    {
+      "acao": "clicar",
+      "alvo": "Salvar"
+    },
+    {
+      "acao": "esperar",
+      "segundos": "2",
+      "legenda": "Pronto! Senha alterada"
+    }
+  ],
+  "config": {
+    "formato": "horizontal",
+    "moldura": true,
+    "fundo": "ameixa",
+    "zoom": 1.8,
+    "velocidade": "normal",
+    "perfil": "gmail-teste"
+  }
+}

@@ -7,7 +7,7 @@ const ACOES = {
   passar: { rotulo: 'Passar o mouse', campos: [['alvo', 'Alvo', 'Menu Livros']], zoom: true },
   rolar: { rotulo: 'Rolar a página', campos: [['alvo', 'Até o elemento (opcional)', 'Descrição'], ['pixels', 'ou pixels', '600', 'curto']] },
   tecla: { rotulo: 'Apertar tecla', campos: [['tecla', 'Tecla', 'Enter', 'curto']] },
-  aguardar: { rotulo: 'Aguardar aparecer', campos: [['alvo', 'Texto que deve aparecer', 'Pedido recebido'], ['segundos', 'Esperar no máximo (s)', '20', 'curto']] },
+  aguardar: { rotulo: 'Aguardar aparecer', campos: [['alvo', 'Texto que deve aparecer', 'Pedido recebido'], ['segundos', 'Esperar no máximo (s)', '20', 'curto'], ['recarregar', 'Recarregar a cada (s)', 'não', 'curto']] },
   esperar: { rotulo: 'Pausa', campos: [['segundos', 'Segundos', '1.5', 'curto']] },
   destacar: { rotulo: 'Destacar elemento', campos: [['alvo', 'Elemento a destacar', 'R$ 79,90'], ['texto', 'Texto do balão (opcional)', 'Preço de pré-venda'], ['segundos', 'Segundos', '2.5', 'curto']], zoom: true },
   legenda: { rotulo: 'Só mostrar legenda', campos: [['segundos', 'Segundos na tela', '2.5', 'curto']] }

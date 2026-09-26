@@ -67,6 +67,21 @@ Novidades da versão 1.1 (tudo nas seções da direita, cada uma com liga/deslig
   Novo passo "Destacar elemento": escurece a tela e ilumina um botão ou preço.
   Campos dentro de iframes (ex.: cartão do gateway) agora são encontrados.
 
+Resetar senha pelo e-mail (Gmail, Outlook...)
+  Veja o roteiro "Exemplo - Resetar senha (demo)", que funciona na hora com um
+  webmail de mentira, e o modelo "Editora Heras - Resetar senha pelo Gmail (ajustar)".
+  1. Use uma conta de e-mail SÓ DE TESTE (ela aparece no vídeo) e uma conta de
+     cliente de teste na loja, cadastrada com esse e-mail.
+  2. Em "🔐 Login lembrado", crie o login "gmail-teste": entre no Gmail na janela
+     que abrir e feche-a. Se o Google Chrome estiver instalado, ele é usado, o que
+     evita o aviso "este navegador pode não ser seguro".
+  3. No roteiro, o passo "Aguardar aparecer" tem o campo "Recarregar a cada (s)":
+     ele atualiza a caixa de entrada até o e-mail chegar. A espera é encurtada
+     no vídeo.
+  4. Links do e-mail que abrem em outra aba são seguidos automaticamente.
+  Dica: abrir o Gmail já na busca (endereço com #search/...) mostra só o e-mail
+  de redefinição, sem expor o resto da caixa de entrada.
+
 Pausar e parar
   Durante o teste ou a gravação aparecem os botões "❚❚ Pausar" e "■ Parar".
   O painel mostra o que está esperando ("procurando ... 5s de 20s").
