@@ -378,6 +378,23 @@ function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 function localStorageGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
 
+// ---------------- tema claro / escuro ----------------
+const TEMAS = { auto: ['🌓', 'automático (segue o Windows)'], escuro: ['🌙', 'escuro'], claro: ['☀️', 'claro'] };
+function temaAtual() { return document.documentElement.dataset.tema || 'auto'; }
+function aplicarTema(t) {
+  if (t === 'auto') delete document.documentElement.dataset.tema;
+  else document.documentElement.dataset.tema = t;
+  localStorageSet('tema', t === 'auto' ? '' : t);
+  const [icone, nome] = TEMAS[t];
+  $('#btn-tema').textContent = icone;
+  $('#btn-tema').title = `Tema: ${nome}. Clique para trocar.`;
+}
+$('#btn-tema').onclick = () => {
+  const ordem = ['auto', 'escuro', 'claro'];
+  aplicarTema(ordem[(ordem.indexOf(temaAtual()) + 1) % ordem.length]);
+};
+aplicarTema(temaAtual());
+
 // ---------------- ligações ----------------
 $('#lista-roteiros').onchange = async (e) => {
   if (alterado && !confirm('Há alterações não salvas. Trocar de roteiro mesmo assim?')) { e.target.value = arquivo; return; }

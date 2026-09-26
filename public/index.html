@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClickReel</title>
+<script>
+  // aplica o tema salvo antes de desenhar a página (evita piscar)
+  try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'escuro') document.documentElement.dataset.tema = t; } catch (_) {}
+</script>
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="/favicon.ico">
 </head>
@@ -18,6 +22,7 @@
   </div>
   <div class="acoes">
     <span id="aviso-salvo" class="aviso"></span>
+    <button class="sec btn-tema" id="btn-tema" title="Tema: automático"></button>
     <button class="sec" id="btn-salvar">Salvar</button>
     <button class="sec" id="btn-testar" title="Roda os passos rápido, com o navegador aberto, sem gerar vídeo">Testar</button>
     <button class="pri" id="btn-gravar" title="Grava no formato escolhido à direita">● Gravar vídeo</button>
