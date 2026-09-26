@@ -24,6 +24,7 @@
     <span id="aviso-salvo" class="aviso"></span>
     <button class="sec btn-tema" id="btn-tema" title="Tema: automático"></button>
     <button class="sec" id="btn-salvar">Salvar</button>
+    <button class="sec" id="btn-navegar-topo" title="Você faz o caminho com o mouse; os passos são anotados e o vídeo pode ser gravado em seguida">◉ Gravar navegando</button>
     <button class="sec" id="btn-testar" title="Roda os passos rápido, com o navegador aberto, sem gerar vídeo">Testar</button>
     <button class="pri" id="btn-gravar" title="Grava no formato escolhido à direita">● Gravar vídeo</button>
     <button class="sec" id="btn-todos" title="Grava desktop, tablet e celular, um depois do outro">Gravar nos 3 formatos</button>
@@ -77,13 +78,15 @@
       <img id="st-erro-img" class="erro-img" hidden alt="Tela no momento do erro">
       <div class="linha-btn">
         <button class="pri" id="btn-terminar" hidden>Terminar e usar os passos</button>
-        <button class="sec" id="btn-cancelar" hidden>Cancelar</button>
+        <button class="sec" id="btn-pausar" hidden title="Pausa no fim do passo atual; o navegador fica parado na tela">❚❚ Pausar</button>
+        <button class="sec perigo" id="btn-cancelar" hidden title="Interrompe agora">■ Parar</button>
       </div>
       <div id="captura" class="captura" hidden>
         <b id="captura-titulo"></b>
         <ol id="captura-lista"></ol>
         <div class="linha-btn" id="captura-acoes">
-          <button class="pri" id="cap-substituir">Substituir os passos</button>
+          <button class="pri" id="cap-gravar" title="Troca os passos pelos anotados e grava o vídeo agora">● Usar e já gravar o vídeo</button>
+          <button class="sec" id="cap-substituir">Só substituir os passos</button>
           <button class="sec" id="cap-adicionar">Adicionar ao final</button>
           <button class="sec perigo" id="cap-descartar">Descartar</button>
         </div>
@@ -119,6 +122,10 @@
         <input type="range" min="1" max="2.6" step="0.1" data-cfg="zoom">
       </label>
       <label class="check"><input type="checkbox" data-cfg="cursor"> Mostrar cursor e cliques</label>
+      <label class="campo">🔒 Esconder na tela (borrão)
+        <textarea data-cfg="esconder" rows="3" placeholder="Um por linha. Ex.:&#10;Endereço&#10;css: .woocommerce-customer-details"></textarea>
+        <small class="dica">Os campos de digitar marcados com 🔒 já são borrados sozinhos (CPF, cartão e senha vêm marcados). Use esta lista para outras coisas: rótulo de campo, texto ou <code>css:</code>.</small>
+      </label>
       <label class="campo">Estilo da legenda
         <div class="seg" data-cfg="estiloLegenda">
           <button data-v="escuro">Escura</button>
@@ -137,11 +144,28 @@
         </div>
       </label>
       <label class="check"><input type="checkbox" data-cfg="acelerarCarregamentos"> Encurtar o tempo de carregamento das páginas</label>
+      <label class="campo">Tamanho da tela (Desktop)
+        <div class="seg" data-cfg="telaDesktop">
+          <button data-v="1280x720">1280×720</button>
+          <button data-v="1600x900">1600×900</button>
+          <button data-v="1920x1080">1920×1080</button>
+        </div>
+        <small class="dica">Como o site "vê" a tela. 1280×720 é um notebook, com letras maiores no vídeo; 1920×1080 é um monitor Full HD. Mudar isto pede gravar de novo.</small>
+      </label>
+      <label class="campo">Resolução do vídeo
+        <div class="seg" data-cfg="resolucao">
+          <button data-v="1080p">1080p</button>
+          <button data-v="1440p">1440p</button>
+          <button data-v="4k">4K</button>
+        </div>
+        <small class="dica" id="dica-resolucao"></small>
+      </label>
       <label class="campo">Qualidade
         <div class="seg" data-cfg="qualidade">
           <button data-v="alta">Alta</button>
-          <button data-v="maxima">Máxima (mais lento)</button>
+          <button data-v="maxima">Máxima (mais lenta)</button>
         </div>
+        <small class="dica">Máxima: captura mais nítida e vídeo com menos compressão (arquivo maior).</small>
       </label>
       <label class="campo">Quadros por segundo
         <div class="seg" data-cfg="fps">
@@ -168,6 +192,12 @@
   </aside>
 </main>
 
+<div id="aviso-final" class="aviso-final" hidden role="status">
+  <span id="aviso-final-icone"></span>
+  <div><b id="aviso-final-titulo"></b><div id="aviso-final-texto"></div></div>
+  <button class="ic" id="aviso-final-fechar" title="Fechar">✕</button>
+</div>
+
 <template id="tpl-passo">
   <li class="passo">
     <div class="p-cab">
@@ -190,6 +220,7 @@
         <option value="desktop,tablet">desktop e tablet</option>
         <option value="tablet,celular">tablet e celular</option>
       </select>
+      <label class="zoom-chk borrar-chk" title="Borra o campo antes de digitar e o mesmo valor em qualquer página seguinte"><input type="checkbox" class="borrar"> 🔒 borrar</label>
       <label class="zoom-chk"><input type="checkbox" class="zoom"> zoom</label>
     </div>
   </li>

@@ -41,6 +41,7 @@ let estado = {
   ultimas: {}, captura: null
 };
 let cancelar = false;
+let pausar = false;
 let pararCaptura = false;
 const clientes = new Set();
 function atualizar(mud) {
@@ -114,12 +115,18 @@ async function gravarUmFormato(roteiro, formato, teste, prefixo) {
   const jobDir = path.join(P.jobs, jobId);
   fs.mkdirSync(jobDir, { recursive: true });
   const total = r.passos.filter((p) => p.acao && passoValeNoFormato(p, formato)).length;
-  atualizar({ fase: teste ? 'testando' : 'gravando', formatoAtual: formato, passo: 0, total, pct: 0, mensagem: `${prefixo}${teste ? 'Testando' : 'Gravando'}…` });
+  atualizar({ fase: teste ? 'testando' : 'gravando', formatoAtual: formato, passo: 0, total, pct: 0, pausado: false, mensagem: `${prefixo}${teste ? 'Testando' : 'Gravando'}…` });
+  let textoPasso = '';
   try {
     await gravar({
       roteiro: r, jobDir, teste,
       cancelado: () => cancelar,
-      aoProgredir: ({ passo, total, indice, texto }) => atualizar({ passo, total, indice, mensagem: `${prefixo}Passo ${passo} de ${total}: ${texto}` })
+      pausado: () => pausar,
+      aoProgredir: ({ passo, total, indice, texto }) => {
+        textoPasso = `${prefixo}Passo ${passo} de ${total}: ${texto}`;
+        atualizar({ passo, total, indice, mensagem: textoPasso });
+      },
+      aoEsperar: (txt) => atualizar({ mensagem: `${textoPasso} — ${txt}` })
     });
   } catch (e) {
     const temImg = fs.existsSync(path.join(jobDir, 'erro.png'));
@@ -153,6 +160,7 @@ async function renderizarJob(jobId, roteiro, prefixo = '') {
 
 async function executar(roteiro, modo) {
   cancelar = false;
+  pausar = false;
   const teste = modo === 'testar';
   const formatos = modo === 'todos' ? TRES_FORMATOS : [comPadrao(roteiro.config).formato];
   atualizar({ ocupado: true, erro: null, erroImagem: null, erroIndice: null, video: null, videos: [], indice: null });
@@ -164,8 +172,15 @@ async function executar(roteiro, modo) {
       const v = await gravarUmFormato(roteiro, f, teste, prefixo);
       if (v) { feitos.push(v); atualizar({ videos: feitos, video: v.url, videoNome: v.nome }); }
     } catch (e) {
+      if (cancelar || e.cancelado) {
+        pausar = false;
+        return atualizar({
+          ocupado: false, fase: 'parado', pausado: false, indice: null, erro: null, erroImagem: null,
+          erroIndice: e.indice ?? null,
+          mensagem: `Parado por você${e.indice !== undefined ? ` no passo ${e.indice + 1}` : ''}.` + (feitos.length ? ` ${feitos.length} vídeo(s) ficaram prontos.` : '')
+        });
+      }
       falhas.push({ formato: FORMATOS[f].nome, msg: (e.indice !== undefined ? `Passo ${e.indice + 1}: ` : '') + e.message, img: e.erroImagem, indice: e.indice });
-      if (cancelar) break;
     }
   }
   limparGravacoesAntigas();
@@ -291,7 +306,17 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
 
-    if (rota === '/api/cancelar' && req.method === 'POST') { cancelar = true; pararCaptura = true; return json(res, 200, { ok: true }); }
+    if (rota === '/api/cancelar' && req.method === 'POST') {
+      cancelar = true; pararCaptura = true; pausar = false;
+      if (estado.ocupado) atualizar({ pausado: false, mensagem: 'Parando…' });
+      return json(res, 200, { ok: true });
+    }
+    if (rota === '/api/pausar' && req.method === 'POST') {
+      if (!estado.ocupado || !['gravando', 'testando'].includes(estado.fase)) return json(res, 400, { erro: 'Nada para pausar agora.' });
+      pausar = !pausar;
+      atualizar({ pausado: pausar, mensagem: pausar ? 'Pausando… (para no fim do passo atual)' : 'Continuando…' });
+      return json(res, 200, { pausado: pausar });
+    }
     if (rota === '/api/abrir-pasta' && req.method === 'POST') { abrirNoSistema(P.videos); return json(res, 200, { ok: true }); }
     if (rota === '/api/abrir-pasta-musicas' && req.method === 'POST') { abrirNoSistema(P.musicas); return json(res, 200, { ok: true }); }
 

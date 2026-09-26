@@ -34,6 +34,12 @@
     },
     {
       "acao": "digitar",
+      "alvo": "CPF",
+      "texto": "123.456.789-09",
+      "legenda": ""
+    },
+    {
+      "acao": "digitar",
       "alvo": "CEP",
       "texto": "01310-100"
     },
@@ -63,6 +69,7 @@
     }
   ],
   "config": {
+    "esconder": "",
     "formato": "horizontal",
     "moldura": true,
     "fundo": "ameixa",

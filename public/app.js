@@ -7,7 +7,7 @@ const ACOES = {
   passar: { rotulo: 'Passar o mouse', campos: [['alvo', 'Alvo', 'Menu Livros']], zoom: true },
   rolar: { rotulo: 'Rolar a página', campos: [['alvo', 'Até o elemento (opcional)', 'Descrição'], ['pixels', 'ou pixels', '600', 'curto']] },
   tecla: { rotulo: 'Apertar tecla', campos: [['tecla', 'Tecla', 'Enter', 'curto']] },
-  aguardar: { rotulo: 'Aguardar aparecer', campos: [['alvo', 'Texto que deve aparecer', 'Pedido recebido']] },
+  aguardar: { rotulo: 'Aguardar aparecer', campos: [['alvo', 'Texto que deve aparecer', 'Pedido recebido'], ['segundos', 'Esperar no máximo (s)', '20', 'curto']] },
   esperar: { rotulo: 'Pausa', campos: [['segundos', 'Segundos', '1.5', 'curto']] },
   legenda: { rotulo: 'Só mostrar legenda', campos: [['segundos', 'Segundos na tela', '2.5', 'curto']] }
 };
@@ -19,7 +19,9 @@ const FUNDOS = {
   floresta: 'linear-gradient(135deg,#0d3b36,#1f6f50,#8fbf4d)',
   claro: 'linear-gradient(135deg,#f3eefb,#e3dcf1,#d4e4f7)'
 };
-const PADRAO = { formato: 'horizontal', moldura: true, fundo: 'ameixa', zoom: 1.8, velocidade: 'normal', fps: 30, qualidade: 'alta', mostrarNavegador: false, acelerarCarregamentos: true, mostrarUrl: true, cursor: true, estiloLegenda: 'escuro', musica: '', volumeMusica: 0.5 };
+const SENSIVEL = /\b(cpf|cnpj|rg|cart[aã]o|n[uú]mero do cart|cvv|cvc|c[oó]digo de seguran|senha|password|validade)\b/i;
+const vaiBorrar = (p) => (p.borrar === true || p.borrar === false ? p.borrar : SENSIVEL.test(String(p.alvo || '')));
+const PADRAO = { telaDesktop: '1280x720', resolucao: '1080p', esconder: '', formato: 'horizontal', moldura: true, fundo: 'ameixa', zoom: 1.8, velocidade: 'normal', fps: 30, qualidade: 'alta', mostrarNavegador: false, acelerarCarregamentos: true, mostrarUrl: true, cursor: true, estiloLegenda: 'escuro', musica: '', volumeMusica: 0.5 };
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -101,7 +103,15 @@ function renderPassos() {
       inp.value = p[chave] ?? '';
       inp.placeholder = ph;
       inp.dataset.chave = chave;
-      inp.oninput = () => { p[chave] = inp.value; if (chave === 'alvo') delete p.conferir; marcarAlterado(); };
+      inp.oninput = () => {
+        p[chave] = inp.value;
+        if (chave === 'alvo') {
+          delete p.conferir;
+          const b = inp.closest('.passo')?.querySelector('.borrar');
+          if (b && p.borrar === undefined) b.checked = vaiBorrar(p);
+        }
+        marcarAlterado();
+      };
       if (chave === 'alvo' && p.acao !== 'aguardar') {
         const linha = document.createElement('div');
         linha.className = 'alvo-linha';
@@ -129,6 +139,12 @@ function renderPassos() {
     fsel.value = p.formatos || '';
     fsel.classList.toggle('ativo', !!p.formatos);
     fsel.onchange = () => { if (fsel.value) p.formatos = fsel.value; else delete p.formatos; fsel.classList.toggle('ativo', !!p.formatos); marcarAlterado(); };
+    const bc = $('.borrar-chk', li);
+    if (p.acao === 'digitar' || p.acao === 'selecionar') {
+      const b = $('.borrar', li);
+      b.checked = vaiBorrar(p);
+      b.onchange = () => { p.borrar = b.checked; marcarAlterado(); };
+    } else bc.style.display = 'none';
     const zc = $('.zoom-chk', li);
     if (def.zoom) {
       const z = $('.zoom', li);
@@ -174,6 +190,9 @@ function renderConfig() {
     } else if (el.type === 'range') {
       el.value = c[k];
       el.oninput = () => { c[k] = Number(el.value); marcarAlterado(); rotulosRange(); };
+    } else if (el.tagName === 'TEXTAREA') {
+      el.value = c[k] || '';
+      el.oninput = () => { c[k] = el.value; marcarAlterado(); };
     } else if (el.tagName === 'SELECT') {
       el.value = c[k] || '';
       el.onchange = () => { c[k] = el.value; marcarAlterado(); };
@@ -268,8 +287,9 @@ function descreverPasso(p) {
 async function usarCaptura(modo) {
   const cap = (estado.captura || []).map(({ senha, ...p }) => p);
   if (modo === 'substituir') {
-    if (roteiro.passos.length > 1 && !confirm('Isso troca todos os passos atuais pelos passos anotados. Continuar?')) return;
+    if (roteiro.passos.length > 1 && !confirm('Isso troca todos os passos atuais pelos passos anotados. Continuar?')) return false;
     roteiro.passos = cap;
+    if (roteiro.passos[0]) roteiro.passos[0].legenda = roteiro.passos[0].legenda || '';
   } else if (modo === 'adicionar') {
     const semAbrirInicial = cap[0] && cap[0].acao === 'abrir' && roteiro.passos.length ? cap.slice(1) : cap;
     roteiro.passos.push(...semAbrirInicial);
@@ -282,6 +302,7 @@ async function usarCaptura(modo) {
     if (temSenha) alert('Atenção: um dos passos digita uma senha e ela ficou salva no roteiro. Use um usuário de teste.');
   }
   await api('/api/capturar/limpar', { method: 'POST' });
+  return modo !== 'descartar';
 }
 
 // ---------------- execução ----------------
@@ -309,6 +330,33 @@ async function remontar() {
   try { await api('/api/renderizar', { method: 'POST', body: { roteiro } }); }
   catch (e) { mostrarErroLocal(e.message); }
 }
+// ---------------- aviso quando um trabalho termina ----------------
+let tituloOriginal = document.title;
+function avisarFim(antes, s) {
+  if (!antes.ocupado || s.ocupado) return;
+  let icone, titulo, texto, tipo;
+  if (s.fase === 'erro') { icone = '⚠️'; tipo = 'erro'; titulo = 'Parou com erro'; texto = s.erro || s.mensagem; }
+  else if (s.fase === 'parado') { icone = '■'; tipo = 'neutro'; titulo = 'Parado'; texto = s.mensagem; }
+  else if (s.fase === 'testado') { icone = '✅'; tipo = 'ok'; titulo = 'Teste concluído'; texto = 'Todos os passos funcionaram. Pode gravar o vídeo.'; }
+  else if (s.fase === 'pronto') { icone = '🎬'; tipo = 'ok'; titulo = s.mensagem; texto = 'O vídeo está à direita e na pasta "videos".'; }
+  else return;
+  const a = $('#aviso-final');
+  a.className = 'aviso-final ' + tipo;
+  $('#aviso-final-icone').textContent = icone;
+  $('#aviso-final-titulo').textContent = titulo;
+  $('#aviso-final-texto').textContent = texto;
+  a.hidden = false;
+  clearTimeout(avisarFim.t);
+  if (tipo === 'ok') avisarFim.t = setTimeout(() => (a.hidden = true), 9000);
+  if (s.erroIndice != null) setTimeout(() => $(`.passo[data-i="${s.erroIndice}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+  // avisa também na aba do navegador, se o painel estiver em segundo plano
+  if (document.hidden) {
+    document.title = `${icone} ${titulo} — ClickReel`;
+    document.addEventListener('visibilitychange', () => (document.title = tituloOriginal), { once: true });
+  }
+}
+$('#aviso-final-fechar').onclick = () => ($('#aviso-final').hidden = true);
+
 const NOMES_FORMATO = { horizontal: 'Desktop', tablet: 'Tablet em pé', 'tablet-deitado': 'Tablet deitado', vertical: 'Celular' };
 function atualizarRemontar() {
   if (!roteiro) return;
@@ -323,6 +371,12 @@ function atualizarRemontar() {
     vertical: 'Site aberto como iPhone; vídeo vertical 9:16 (Reels/Stories).'
   };
   $('#dica-formato').textContent = dicas[f] || '';
+  const c = roteiro.config;
+  const tam = { '1080p': [1920, 1080], '1440p': [2560, 1440], '4k': [3840, 2160] }[c.resolucao] || [1920, 1080];
+  const vert = f === 'vertical' || f === 'tablet';
+  $('#dica-resolucao').textContent = `Vídeo final: ${vert ? tam[1] : tam[0]}×${vert ? tam[0] : tam[1]}.` +
+    (c.formato === 'horizontal' && c.telaDesktop === '1920x1080' && c.resolucao === '1080p' ? ' Com tela 1920×1080, use 1440p ou 4K para o texto do site não ficar miúdo.' : '') +
+    (c.resolucao === '4k' ? ' 4K demora mais para montar.' : '');
 }
 function mostrarErroLocal(msg) {
   $('#st-erro').hidden = false;
@@ -343,14 +397,25 @@ function aplicarEstado(s) {
   $('#st-erro-img').hidden = !s.erroImagem;
   if (s.erroImagem) $('#st-erro-img').src = s.erroImagem + '?' + Date.now();
   $('#btn-cancelar').hidden = !s.ocupado || s.fase === 'navegando';
+  const podePausar = s.ocupado && (s.fase === 'gravando' || s.fase === 'testando');
+  $('#btn-pausar').hidden = !podePausar;
+  $('#btn-pausar').textContent = s.pausado ? '▶ Continuar' : '❚❚ Pausar';
+  $('#btn-pausar').classList.toggle('pri', !!s.pausado);
+  $('#btn-pausar').classList.toggle('sec', !s.pausado);
+  if (s.pausado && podePausar) $('#st-fase').textContent = 'Pausado';
+  avisarFim(antes, s);
   $('#btn-terminar').hidden = s.fase !== 'navegando';
-  ['#btn-gravar', '#btn-testar', '#btn-remontar', '#btn-todos', '#btn-navegar'].forEach((b) => ($(b).disabled = !!s.ocupado));
+  ['#btn-gravar', '#btn-testar', '#btn-remontar', '#btn-todos', '#btn-navegar', '#btn-navegar-topo'].forEach((b) => ($(b).disabled = !!s.ocupado));
   $$('.apontar').forEach((b) => (b.disabled = !!s.ocupado));
   atualizarRemontar();
   // destaca o passo em execução / com erro
   $$('.passo').forEach((li) => li.classList.remove('atual', 'falhou'));
   if ((s.fase === 'gravando' || s.fase === 'testando') && s.indice != null) $(`.passo[data-i="${s.indice}"]`)?.classList.add('atual');
-  if (s.fase === 'erro' && s.erroIndice != null) $(`.passo[data-i="${s.erroIndice}"]`)?.classList.add('falhou');
+  if ((s.fase === 'erro' || s.fase === 'parado') && s.erroIndice != null) $(`.passo[data-i="${s.erroIndice}"]`)?.classList.add(s.fase === 'erro' ? 'falhou' : 'atual');
+  // mantém à vista o passo que está rodando
+  if ((s.fase === 'gravando' || s.fase === 'testando') && s.indice != null && s.indice !== antes.indice) {
+    $(`.passo[data-i="${s.indice}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
   // passos anotados navegando
   const cap = s.captura && s.captura.length;
   $('#captura').hidden = !cap;
@@ -413,12 +478,20 @@ $('#btn-testar').onclick = () => executar('testar');
 $('#btn-gravar').onclick = () => executar('gravar');
 $('#btn-todos').onclick = () => executar('todos');
 $('#btn-navegar').onclick = navegar;
+$('#btn-navegar-topo').onclick = navegar;
+$('#cap-gravar').onclick = async () => {
+  if (await usarCaptura('substituir')) {
+    // dá um instante para o servidor liberar e grava no formato escolhido
+    setTimeout(() => executar('gravar'), 300);
+  }
+};
 $('#btn-terminar').onclick = () => api('/api/capturar/parar', { method: 'POST' });
 $('#cap-substituir').onclick = () => usarCaptura('substituir');
 $('#cap-adicionar').onclick = () => usarCaptura('adicionar');
 $('#cap-descartar').onclick = () => usarCaptura('descartar');
 $('#btn-remontar').onclick = remontar;
 $('#btn-cancelar').onclick = () => api('/api/cancelar', { method: 'POST' });
+$('#btn-pausar').onclick = () => api('/api/pausar', { method: 'POST' }).catch((e) => mostrarErroLocal(e.message));
 $('#btn-pasta').onclick = () => api('/api/abrir-pasta', { method: 'POST' });
 $('#btn-pasta-musicas').onclick = (e) => { e.preventDefault(); api('/api/abrir-pasta-musicas', { method: 'POST' }); setTimeout(carregarMusicas, 4000); };
 $('#musicas').onfocus = carregarMusicas;

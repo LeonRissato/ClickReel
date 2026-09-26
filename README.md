@@ -21,6 +21,13 @@ e moldura de navegador, tablet ou celular.
 - **Efeitos**: cursor com onda no clique, zoom que acompanha a ação, legendas animadas,
   fundo em degradê, barra de endereço, música de fundo e encurtamento dos carregamentos.
 - **Remontar**: troca fundo, zoom, legenda ou música sem gravar de novo.
+- **🔒 Borrão de dados sensíveis**: campos de CPF, cartão e senha são borrados na própria
+  página antes da captura (o dado nunca entra no vídeo), inclusive quando o mesmo valor aparece
+  em páginas seguintes. A lista "Esconder na tela" borra qualquer outro campo ou texto.
+- **Pausar / Parar** durante testes e gravações, com a espera de cada passo mostrada ao vivo.
+- **Tema claro, escuro ou automático** no painel.
+- **Qualidade**: tela do Desktop em 1280×720, 1600×900 ou 1920×1080; vídeo em 1080p, 1440p ou 4K;
+  modo "Máxima" com captura mais nítida e menos compressão.
 
 ## Instalar
 

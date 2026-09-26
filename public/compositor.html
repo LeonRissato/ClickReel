@@ -265,7 +265,8 @@ window.desenhar = async function (t, o) {
 
   // barra de endereço
   if (L.urls && L.urls.length) {
-    const u = L.urls[Math.max(0, ultimoAte(L.urls, t))].url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    // só domínio + caminho: parâmetros (?email=...&cpf=...) nunca aparecem no vídeo
+    const u = L.urls[Math.max(0, ultimoAte(L.urls, t))].url.replace(/[?#].*$/, '').replace(/^https?:\/\//, '').replace(/\/$/, '');
     const s = document.querySelector('#url span'); if (s.textContent !== u) s.textContent = u;
   }
 

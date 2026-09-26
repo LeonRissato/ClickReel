@@ -166,3 +166,17 @@ input::placeholder { color: var(--sub); opacity: .7; }
 .abas { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .abas button { border: 1px solid var(--borda); background: var(--campo); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 600; }
 .abas button.on { background: var(--pri); color: #fff; border-color: var(--pri); }
+
+/* aviso quando um teste/gravação termina */
+.aviso-final { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20; display: flex; gap: 12px; align-items: flex-start; max-width: min(640px, calc(100vw - 32px)); padding: 14px 14px 14px 18px; border-radius: 12px; background: var(--card); color: var(--txt); border: 1px solid var(--borda); box-shadow: 0 18px 50px rgba(0,0,0,.35); animation: sobe .25s ease-out; }
+.aviso-final #aviso-final-icone { font-size: 22px; line-height: 1.2; }
+.aviso-final b { display: block; margin-bottom: 2px; font-size: 15px; }
+.aviso-final #aviso-final-texto { color: var(--sub); white-space: pre-wrap; line-height: 1.45; }
+.aviso-final.erro { border-color: var(--perigo); background: var(--perigo-suave); }
+.aviso-final.erro b { color: var(--perigo); }
+.aviso-final.ok { border-color: var(--ok); }
+@keyframes sobe { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+textarea { font: inherit; color: inherit; background: var(--campo); border: 1px solid var(--borda); border-radius: 7px; padding: 7px 9px; resize: vertical; font-weight: 400; }
+.borrar-chk input { accent-color: var(--pri); }
+#btn-navegar-topo { color: #ff8591 !important; }

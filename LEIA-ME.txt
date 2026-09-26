@@ -49,6 +49,16 @@ COMO USAR
 7. Para trocar fundo, zoom, legenda ou música, use "Remontar a última
    gravação". O vídeo é montado de novo sem refazer a compra.
 
+Dados sensíveis (CPF, cartão, senha)
+  Nos passos de "Digitar", marque "🔒 borrar". CPF, cartão e senha já vêm marcados.
+  O campo é borrado antes de a primeira letra aparecer, e o mesmo valor também é
+  borrado se aparecer em outra página (por exemplo, no "pedido recebido").
+  Para esconder outras coisas, use "Esconder na tela" nas configurações.
+
+Pausar e parar
+  Durante o teste ou a gravação aparecem os botões "❚❚ Pausar" e "■ Parar".
+  O painel mostra o que está esperando ("procurando ... 5s de 20s").
+
 Dicas para o "alvo"
   Comprar [2]           → o segundo elemento com esse texto
   css: #billing_email   → seletor CSS (útil no checkout do WooCommerce)
