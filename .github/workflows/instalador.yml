@@ -16,6 +16,7 @@ permissions:
 jobs:
   instalador:
     runs-on: windows-latest
+    timeout-minutes: 45
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}\navegadores
     steps:
@@ -33,9 +34,11 @@ jobs:
           "valor=$v" >> $env:GITHUB_OUTPUT
 
       - name: Dependências (Windows)
+        timeout-minutes: 10
         run: npm ci --omit=dev --no-audit --no-fund
 
       - name: Chromium embutido
+        timeout-minutes: 10
         run: npx playwright install chromium
 
       - name: Node portátil
@@ -45,19 +48,28 @@ jobs:
           Copy-Item (Get-Command node).Source build\node\node.exe
 
       - name: Conferir se o app sobe
+        timeout-minutes: 3
         shell: pwsh
         run: |
           $env:NAO_ABRIR = "1"
-          $p = Start-Process -FilePath build\node\node.exe -ArgumentList server.js -PassThru -NoNewWindow
-          Start-Sleep -Seconds 4
-          $r = Invoke-WebRequest http://127.0.0.1:4580/api/estado -UseBasicParsing
-          Stop-Process -Id $p.Id -Force
-          if ($r.StatusCode -ne 200) { throw "servidor não respondeu" }
+          $p = Start-Process -FilePath build\node\node.exe -ArgumentList server.js -PassThru -WindowStyle Hidden -RedirectStandardOutput srv.log -RedirectStandardError srv.err
+          try {
+            $ok = $false
+            for ($i = 0; $i -lt 20 -and -not $ok; $i++) {
+              Start-Sleep -Seconds 1
+              try { $r = Invoke-WebRequest http://127.0.0.1:4580/api/estado -UseBasicParsing -TimeoutSec 3; $ok = $r.StatusCode -eq 200 } catch {}
+            }
+          } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+          Get-Content srv.log, srv.err -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "o servidor do ClickReel não respondeu" }
+          Remove-Item srv.log, srv.err -ErrorAction SilentlyContinue
 
       - name: Inno Setup
+        timeout-minutes: 10
         run: choco install innosetup -y --no-progress
 
       - name: Gerar instalador
+        timeout-minutes: 20
         shell: pwsh
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DVersao=${{ steps.versao.outputs.valor }}" instalador\clickreel.iss

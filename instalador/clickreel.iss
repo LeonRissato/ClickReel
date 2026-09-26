@@ -23,8 +23,11 @@ SetupIconFile=..\clickreel.ico
 LicenseFile=..\LICENSE
 UninstallDisplayIcon={app}\clickreel.ico
 UninstallDisplayName={#MeuApp}
-Compression=lzma2/max
+; compressão "normal" em vários núcleos: gera em poucos minutos no GitHub
+Compression=lzma2/normal
 SolidCompression=yes
+LZMAUseSeparateProcess=yes
+LZMANumBlockThreads=4
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
