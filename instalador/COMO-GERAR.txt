@@ -3,7 +3,7 @@ COMO GERAR O INSTALADOR (.exe)
 Jeito fácil (recomendado): pelo GitHub
   1. Suba o projeto para o GitHub.
   2. Na página do repositório: aba "Actions" > "Instalador Windows" > "Run workflow".
-  3. Espere uns 10 minutos. No fim da execução, baixe "EstudioDemo-Setup" em "Artifacts".
+  3. Espere uns 10 minutos. No fim da execução, baixe "ClickReel-Setup" em "Artifacts".
   Para uma versão oficial: crie uma tag (ex.: v1.1.0). O .exe aparece sozinho em "Releases".
 
 À mão, num PC com Windows
@@ -14,5 +14,5 @@ Jeito fácil (recomendado): pelo GitHub
        npx playwright install chromium
        mkdir build\node
        copy "%ProgramFiles%\nodejs\node.exe" build\node\node.exe
-       "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" instalador\estudio-demo.iss
-  3. O instalador fica em dist\EstudioDemo-Setup-1.0.0.exe
+       "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" instalador\clickreel.iss
+  3. O instalador fica em dist\ClickReel-Setup-1.0.0.exe

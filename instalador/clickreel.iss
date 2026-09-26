@@ -1,8 +1,8 @@
-﻿; Instalador do Estúdio Demo (Inno Setup 6).
+﻿; Instalador do ClickReel (Inno Setup 6).
 ; Gerado automaticamente pelo GitHub Actions (.github/workflows/instalador.yml).
 ; Para gerar à mão no Windows, veja instalador/COMO-GERAR.txt
 
-#define MeuApp "Estúdio Demo"
+#define MeuApp "ClickReel"
 #ifndef Versao
   #define Versao "1.0.0"
 #endif
@@ -13,14 +13,14 @@ AppName={#MeuApp}
 AppVersion={#Versao}
 AppVerName={#MeuApp} {#Versao}
 AppPublisher=Editora Heras
-DefaultDirName={localappdata}\Programs\Estudio Demo
+DefaultDirName={localappdata}\Programs\ClickReel
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=EstudioDemo-Setup-{#Versao}
-SetupIconFile=..\estudio.ico
-UninstallDisplayIcon={app}\estudio.ico
+OutputBaseFilename=ClickReel-Setup-{#Versao}
+SetupIconFile=..\clickreel.ico
+UninstallDisplayIcon={app}\clickreel.ico
 UninstallDisplayName={#MeuApp}
 Compression=lzma2/max
 SolidCompression=yes
@@ -38,7 +38,7 @@ Name: "atalho"; Description: "Criar ícone na Área de Trabalho"; GroupDescripti
 [Files]
 Source: "..\server.js";        DestDir: "{app}"; Flags: ignoreversion
 Source: "..\package.json";     DestDir: "{app}"; Flags: ignoreversion
-Source: "..\estudio.ico";      DestDir: "{app}"; Flags: ignoreversion
+Source: "..\clickreel.ico";      DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LEIA-ME.txt";      DestDir: "{app}"; Flags: ignoreversion isreadme
 Source: "..\lib\*";            DestDir: "{app}\lib";          Flags: ignoreversion recursesubdirs
 Source: "..\public\*";         DestDir: "{app}\public";       Flags: ignoreversion recursesubdirs
@@ -54,8 +54,8 @@ Name: "{app}\videos"
 Name: "{app}\musicas"
 
 [Icons]
-Name: "{autoprograms}\{#MeuApp}";            Filename: "{app}\node\node.exe"; Parameters: "server.js"; WorkingDir: "{app}"; IconFilename: "{app}\estudio.ico"; Comment: "Grava vídeos de demonstração do site"
-Name: "{autodesktop}\{#MeuApp}";             Filename: "{app}\node\node.exe"; Parameters: "server.js"; WorkingDir: "{app}"; IconFilename: "{app}\estudio.ico"; Tasks: atalho
+Name: "{autoprograms}\{#MeuApp}";            Filename: "{app}\node\node.exe"; Parameters: "server.js"; WorkingDir: "{app}"; IconFilename: "{app}\clickreel.ico"; Comment: "Grava vídeos de demonstração do site"
+Name: "{autodesktop}\{#MeuApp}";             Filename: "{app}\node\node.exe"; Parameters: "server.js"; WorkingDir: "{app}"; IconFilename: "{app}\clickreel.ico"; Tasks: atalho
 Name: "{autoprograms}\{#MeuApp} - Vídeos";   Filename: "{app}\videos"
 
 [Run]

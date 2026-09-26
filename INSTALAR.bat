@@ -1,8 +1,8 @@
 @echo off
-title Estudio Demo - Instalacao
+title ClickReel - Instalacao
 cd /d "%~dp0"
 echo.
-echo  === Estudio Demo - instalacao ===
+echo  === ClickReel - instalacao ===
 echo.
 where node >nul 2>nul
 if errorlevel 1 (
@@ -22,9 +22,9 @@ call npx playwright install chromium
 if errorlevel 1 goto erro
 echo.
 echo  Criando atalho na Area de Trabalho...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$d=[Environment]::GetFolderPath('Desktop'); $s=(New-Object -ComObject WScript.Shell).CreateShortcut($d+'\Estudio Demo.lnk'); $s.TargetPath='%~dp0ABRIR-PAINEL.bat'; $s.WorkingDirectory='%~dp0'; $s.IconLocation='%~dp0estudio.ico'; $s.Save()"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$d=[Environment]::GetFolderPath('Desktop'); $s=(New-Object -ComObject WScript.Shell).CreateShortcut($d+'\ClickReel.lnk'); $s.TargetPath='%~dp0ABRIR-PAINEL.bat'; $s.WorkingDirectory='%~dp0'; $s.IconLocation='%~dp0clickreel.ico'; $s.Save()"
 echo.
-echo  Tudo pronto! Use o icone "Estudio Demo" na Area de Trabalho
+echo  Tudo pronto! Use o icone "ClickReel" na Area de Trabalho
 echo  (ou o arquivo "ABRIR-PAINEL.bat").
 echo.
 pause

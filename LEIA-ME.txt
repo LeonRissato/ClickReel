@@ -1,4 +1,4 @@
-ESTÚDIO DEMO
+CLICKREEL
 Grava vídeos de demonstração do seu site (por exemplo, uma compra) a partir de
 uma lista de passos. O vídeo sai em MP4 com cursor animado, zoom nos cliques,
 legendas e moldura de navegador, tablet ou celular.
@@ -6,8 +6,8 @@ legendas e moldura de navegador, tablet ou celular.
 ------------------------------------------------------------------------------
 INSTALAR (Windows)
 ------------------------------------------------------------------------------
-Com o instalador (.exe): abra EstudioDemo-Setup e avance até o fim. Use o
-ícone "Estúdio Demo" na Área de Trabalho.
+Com o instalador (.exe): abra ClickReel-Setup e avance até o fim. Use o
+ícone "ClickReel" na Área de Trabalho.
 
 Pelo código-fonte:
 1. Instale o Node.js (versão LTS) em https://nodejs.org/pt

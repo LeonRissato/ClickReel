@@ -1,4 +1,4 @@
-// Painel do Estúdio Demo
+// Painel do ClickReel
 const ACOES = {
   abrir: { rotulo: 'Abrir página', campos: [['url', 'Endereço', 'https://seusite.com.br/produto']] },
   clicar: { rotulo: 'Clicar', campos: [['alvo', 'Alvo (texto do botão, link…)', 'Adicionar ao carrinho']], zoom: true },
@@ -370,7 +370,7 @@ function aplicarEstado(s) {
 function conectarEventos() {
   const es = new EventSource('/api/eventos');
   es.onmessage = (e) => aplicarEstado(JSON.parse(e.data));
-  es.onerror = () => { $('#st-msg').textContent = 'Sem conexão com o Estúdio. A janela preta do programa ainda está aberta?'; };
+  es.onerror = () => { $('#st-msg').textContent = 'Sem conexão com o ClickReel. A janela preta do programa ainda está aberta?'; };
 }
 
 // ---------------- util ----------------

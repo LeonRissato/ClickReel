@@ -1,4 +1,4 @@
-// Estúdio Demo — painel local para gravar vídeos de demonstração do site.
+// ClickReel — painel local para gravar vídeos de demonstração do site.
 // Abra com "ABRIR-PAINEL.bat" (Windows) ou "node server.js".
 // Na versão instalada (.exe) o Chromium vem dentro da pasta "navegadores".
 {
@@ -306,7 +306,7 @@ const servidor = http.createServer(async (req, res) => {
       const a = dentro(P.demo, rel);
       if (a) return servirArquivo(req, res, a);
     }
-    if (rota === '/favicon.ico') return servirArquivo(req, res, path.join(RAIZ, 'estudio.ico'));
+    if (rota === '/favicon.ico') return servirArquivo(req, res, path.join(RAIZ, 'clickreel.ico'));
     const rel = rota === '/' ? 'index.html' : rota.slice(1);
     const a = dentro(P.publico, rel);
     if (a) return servirArquivo(req, res, a);
@@ -326,7 +326,7 @@ servidor.on('error', (e) => {
 });
 
 servidor.listen(PORTA, '127.0.0.1', () => {
-  console.log('\n  Estúdio Demo está rodando.');
+  console.log('\n  ClickReel está rodando.');
   console.log(`  Painel: http://localhost:${PORTA}`);
   console.log('  Deixe esta janela aberta enquanto usa. Para encerrar, feche-a.\n');
   if (!process.env.NAO_ABRIR) abrirNoSistema(`http://localhost:${PORTA}`);

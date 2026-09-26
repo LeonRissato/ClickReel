@@ -1,4 +1,4 @@
-# Estúdio Demo
+# ClickReel
 
 Grava vídeos de demonstração de sites (uma compra, um cadastro, um tutorial) a partir de uma
 lista de passos. O vídeo sai em MP4 com cursor animado, zoom automático nos cliques, legendas
@@ -25,7 +25,7 @@ e moldura de navegador, tablet ou celular.
 ## Instalar
 
 ### Windows (instalador)
-Baixe `EstudioDemo-Setup-x.y.z.exe` em **Releases** e instale. Não precisa de Node nem de
+Baixe `ClickReel-Setup-x.y.z.exe` em **Releases** e instale. Não precisa de Node nem de
 mais nada. O instalador cria o ícone na Área de Trabalho.
 
 ### A partir do código
@@ -46,7 +46,7 @@ O workflow `.github/workflows/instalador.yml` gera o instalador num Windows do G
 - **Manual**: *Actions → Instalador Windows → Run workflow*. O `.exe` aparece em *Artifacts*.
 - **Versão**: `git tag v1.1.0 && git push --tags`. O `.exe` é anexado à *Release*.
 
-O instalador (Inno Setup, `instalador/estudio-demo.iss`) leva o Node portátil, o Chromium do
+O instalador (Inno Setup, `instalador/clickreel.iss`) leva o Node portátil, o Chromium do
 Playwright e o ffmpeg, e instala por usuário, sem pedir administrador.
 
 ## Como funciona

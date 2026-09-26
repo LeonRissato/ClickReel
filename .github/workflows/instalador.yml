@@ -1,6 +1,6 @@
 name: Instalador Windows
 
-# Gera o EstudioDemo-Setup.exe.
+# Gera o ClickReel-Setup.exe.
 # - Automático: ao publicar uma tag de versão (ex.: git tag v1.1.0 && git push --tags)
 #   o .exe é anexado a uma Release do GitHub.
 # - Manual: aba "Actions" → "Instalador Windows" → "Run workflow"
@@ -60,11 +60,11 @@ jobs:
       - name: Gerar instalador
         shell: pwsh
         run: |
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DVersao=${{ steps.versao.outputs.valor }}" instalador\estudio-demo.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DVersao=${{ steps.versao.outputs.valor }}" instalador\clickreel.iss
 
       - uses: actions/upload-artifact@v4
         with:
-          name: EstudioDemo-Setup
+          name: ClickReel-Setup
           path: dist/*.exe
 
       - name: Publicar na Release

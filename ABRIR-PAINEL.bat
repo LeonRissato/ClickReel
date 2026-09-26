@@ -1,5 +1,5 @@
 @echo off
-title Estudio Demo
+title ClickReel
 cd /d "%~dp0"
 if not exist "node_modules\playwright" (
   call INSTALAR.bat
@@ -7,5 +7,5 @@ if not exist "node_modules\playwright" (
 )
 node server.js
 echo.
-echo  O Estudio Demo foi encerrado.
+echo  O ClickReel foi encerrado.
 pause
