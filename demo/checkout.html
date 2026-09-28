@@ -10,4 +10,13 @@
 <div class="cheio"><div style="font-weight:600;font-size:14px;margin-bottom:8px">Pagamento</div><div class="pagamento"><label><input type="radio" name="pg" value="pix"> Pix</label><label><input type="radio" name="pg" value="cartao" onchange="document.getElementById('area-cartao').style.display='block'"> Cartão de crédito</label><label><input type="radio" name="pg" value="boleto"> Boleto</label></div></div>
 <div class="cheio" id="area-cartao" style="display:none"><iframe src="cartao.html" title="Pagamento seguro" style="width:100%;height:190px;border:1.5px solid #e6dff0;border-radius:12px"></iframe></div>
 <div class="cheio" style="text-align:right"><button class="btn" type="submit">Fazer pedido</button></div>
-</form></main></body></html>
+</form></main>
+<script>
+// como no WooCommerce: ao mudar o CEP, o formulário fica coberto por "carregando" enquanto recalcula o frete
+document.querySelector('input[name=cep]').addEventListener('change',()=>{
+  const f=document.querySelector('form');f.style.position='relative';
+  const o=document.createElement('div');o.className='blockUI blockOverlay';
+  o.style.cssText='position:absolute;inset:0;background:rgba(255,255,255,.6);z-index:10;cursor:wait';f.appendChild(o);
+  setTimeout(()=>o.remove(),3000);
+});
+</script></body></html>
