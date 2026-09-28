@@ -1,6 +1,6 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pagamento — Livraria Exemplo</title><link rel="stylesheet" href="estilo.css"><script src="loja.js"></script></head><body><script>topo()</script>
 <main><h1>Finalizar compra</h1><p class="sub">Só mais um passo.</p>
-<form action="obrigado.html" onsubmit="localStorage.removeItem('carrinho')">
+<form class="checkout" action="obrigado.html">
 <label class="cheio">Nome completo<input name="nome" placeholder="Como está no documento"></label>
 <label>E-mail<input name="email" type="email" placeholder="voce@email.com"></label>
 <label>CPF<input name="cpf" placeholder="000.000.000-00"></label>
@@ -18,5 +18,25 @@ document.querySelector('input[name=cep]').addEventListener('change',()=>{
   const o=document.createElement('div');o.className='blockUI blockOverlay';
   o.style.cssText='position:absolute;inset:0;background:rgba(255,255,255,.6);z-index:10;cursor:wait';f.appendChild(o);
   setTimeout(()=>o.remove(),3000);
+});
+// como no WooCommerce + Mercado Pago: "Fazer pedido" envia por AJAX, a tela fica "carregando"
+// alguns segundos (gerando o Pix) e só então o script leva para a página do pedido
+document.querySelector('form').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const f=e.target;f.style.position='relative';f.classList.add('processing');
+  document.querySelectorAll('.woocommerce-error').forEach((x)=>x.remove());
+  const o=document.createElement('div');o.className='blockUI blockOverlay';
+  o.style.cssText='position:absolute;inset:0;background:rgba(255,255,255,.6);z-index:10;cursor:wait';f.appendChild(o);
+  const pg=f.querySelector('input[name=pg]:checked');
+  setTimeout(()=>{
+    if(!pg){
+      o.remove();f.classList.remove('processing');
+      const err=document.createElement('ul');err.className='woocommerce-error';err.setAttribute('role','alert');
+      err.style.cssText='background:#fde8e8;color:#9b1c1c;padding:12px 16px;border-radius:10px;list-style:none;margin:0 0 14px';
+      err.innerHTML='<li>Escolha uma forma de pagamento.</li>';f.prepend(err);return;
+    }
+    localStorage.removeItem('carrinho');
+    location.href='obrigado.html?'+new URLSearchParams(new FormData(f));
+  },pg?5000:1500);
 });
 </script></body></html>
