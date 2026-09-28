@@ -14,3 +14,5 @@ Thumbs.db
 .perfis/
 marca/logo.*
 preferencias.json
+erros.log
+erros.log.antigo

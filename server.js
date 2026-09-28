@@ -33,6 +33,20 @@ P.vozes = path.join(P.jobs, 'vozes');
 process.env.CLICKREEL_PERFIS = P.perfis;
 for (const d of [P.roteiros, P.videos, P.musicas, P.jobs, P.marca, P.perfis]) fs.mkdirSync(d, { recursive: true });
 
+// ---------------- registro de erros ----------------
+// Qualquer erro inesperado vai para "erros.log" (na pasta do programa) em vez de fechar o ClickReel.
+const ARQ_LOG = path.join(RAIZ, 'erros.log');
+function registrar(tipo, e) {
+  const txt = `[${new Date().toLocaleString('pt-BR')}] v${require('./package.json').version} ${tipo}: ${e && e.stack ? e.stack : String(e)}\n`;
+  try {
+    if (fs.existsSync(ARQ_LOG) && fs.statSync(ARQ_LOG).size > 2e6) fs.renameSync(ARQ_LOG, ARQ_LOG + '.antigo');
+    fs.appendFileSync(ARQ_LOG, txt);
+  } catch (_) {}
+  console.error(txt);
+}
+process.on('uncaughtException', (e) => registrar('erro inesperado', e));
+process.on('unhandledRejection', (e) => registrar('erro inesperado (promessa)', e));
+
 const TIPOS = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
@@ -203,6 +217,7 @@ async function executarRoteiro(roteiro, modo, prefixoExtra = '') {
       if (v) { feitos.push(v); atualizar({ videos: [...(estado.videos || []), v], video: v.url, videoNome: v.nome }); }
     } catch (e) {
       if (cancelar || e.cancelado) return { feitos, falhas, cancelado: e };
+      registrar(`falha em ${FORMATOS[f].nome}`, e);
       falhas.push({ formato: (prefixoExtra ? roteiro.nome + ' · ' : '') + FORMATOS[f].nome, msg: (e.indice !== undefined ? `Passo ${e.indice + 1}: ` : '') + e.message, img: e.erroImagem, indice: e.indice });
     }
   }
