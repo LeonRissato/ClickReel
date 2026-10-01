@@ -154,12 +154,40 @@
           <button data-v="auto">Automática</button>
           <button data-v="neural">Neural (internet)</button>
           <button data-v="windows">Do Windows</button>
+          <button data-v="elevenlabs">ElevenLabs</button>
         </div>
-        <small class="dica">Neural: vozes naturais da Microsoft, grátis, precisam de internet. Do Windows: funciona sem internet, mais robótica. Automática: usa a neural e, sem internet, a do Windows.</small>
+        <small class="dica">Neural: vozes naturais da Microsoft, grátis, precisam de internet. Do Windows: funciona sem internet, mais robótica. Automática: usa a neural e, sem internet, a do Windows. ElevenLabs: vozes premium, usa a sua conta (gasta créditos).</small>
       </label>
-      <label class="campo">Voz neural
+      <label class="campo" id="campo-voz-neural">Voz neural
         <select data-cfg="narracaoVoz" id="vozes"></select>
       </label>
+      <div class="eleven" id="eleven" hidden>
+        <div class="campo">Chave da API da ElevenLabs
+          <div class="linha-btn" style="margin-top:4px" id="eleven-tem" hidden>
+            <span class="ok-chave">✓ Chave salva <b id="eleven-final"></b></span>
+            <button class="sec" id="eleven-trocar">Trocar</button>
+            <button class="sec perigo" id="eleven-remover">Remover</button>
+          </div>
+          <div class="linha-btn" style="margin-top:4px" id="eleven-sem">
+            <input type="password" id="eleven-chave" placeholder="sk_…" autocomplete="off" spellcheck="false" style="flex:1;min-width:180px">
+            <button class="sec" id="eleven-salvar">Salvar chave</button>
+          </div>
+          <small class="dica">Pegue em <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → Configurações → API Keys</a>, com acesso a "Text to Speech" e "Voices". A chave fica só neste computador — não vai para o roteiro.</small>
+          <small class="dica" id="eleven-uso"></small>
+        </div>
+        <div class="campo" id="eleven-voz-campo" hidden>Voz da ElevenLabs
+          <div class="linha-btn" style="margin-top:4px">
+            <select data-cfg="narracaoVozEleven" id="eleven-vozes" style="flex:1;min-width:180px"></select>
+            <button class="sec" id="eleven-ouvir" title="Ouvir a amostra da voz (não gasta créditos)">▶ Ouvir</button>
+            <button class="sec" id="eleven-recarregar" title="Buscar de novo as vozes da conta">↻</button>
+          </div>
+          <small class="dica">Aparecem as vozes da sua conta. Para usar outra da biblioteca, adicione-a em "My Voices" no site da ElevenLabs e clique em ↻.</small>
+        </div>
+        <label class="campo" id="eleven-modelo-campo" hidden>Modelo
+          <select data-cfg="narracaoModeloEleven" id="eleven-modelos"></select>
+        </label>
+        <small class="dica" id="eleven-custo"></small>
+      </div>
       <label class="campo">Velocidade da fala: <b id="velfala-v"></b>
         <input type="range" min="-30" max="30" step="5" data-cfg="narracaoVelocidade">
       </label>

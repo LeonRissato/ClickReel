@@ -139,7 +139,7 @@ function renderPassos() {
     const nar = $('.narracao', li);
     pn.hidden = !roteiro.config.narracaoAtiva || ['esperar'].includes(p.acao);
     nar.value = p.narracao || '';
-    nar.oninput = () => { p.narracao = nar.value; marcarAlterado(); };
+    nar.oninput = () => { p.narracao = nar.value; marcarAlterado(); if (roteiro.config.narracaoMotor === 'elevenlabs') custoEleven(); };
     const leg = $('.legenda', li);
     leg.value = p.legenda || '';
     leg.oninput = () => { p.legenda = leg.value; marcarAlterado(); };
@@ -215,6 +215,7 @@ function renderConfig() {
   rotulosRange();
   atualizarRemontar();
   atualizarSecoes();
+  atualizarEleven();
   const cores = $('#cores');
   cores.innerHTML = '';
   for (const [nome, grad] of Object.entries(FUNDOS)) {
@@ -610,6 +611,95 @@ async function carregarVozes() {
   $('#vozes').innerHTML = Object.entries(v).map(([id, nome]) => `<option value="${id}">${esc(nome)}</option>`).join('');
   if (roteiro) $('#vozes').value = roteiro.config.narracaoVoz || 'pt-BR-FranciscaNeural';
 }
+
+// ---------------- ElevenLabs ----------------
+let elevenInfo = null;
+let vozesEl = null;
+function avisoEleven(txt, erro) { const u = $('#eleven-uso'); u.textContent = txt || ''; u.style.color = erro ? '#c0392b' : ''; }
+async function atualizarEleven(buscar = false) {
+  if (!roteiro) return;
+  const c = roteiro.config;
+  const on = c.narracaoMotor === 'elevenlabs';
+  $('#eleven').hidden = !on;
+  $('#campo-voz-neural').hidden = on;
+  if (!on) return;
+  if (!elevenInfo || buscar) {
+    try { elevenInfo = await api('/api/elevenlabs?uso=1'); } catch (e) { avisoEleven(e.message, true); return; }
+  }
+  const m = $('#eleven-modelos');
+  if (!m.options.length) m.innerHTML = Object.entries(elevenInfo.modelos || {}).map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join('');
+  m.value = c.narracaoModeloEleven || 'eleven_multilingual_v2';
+  const tem = !!elevenInfo.configurada;
+  $('#eleven-tem').hidden = !tem;
+  $('#eleven-sem').hidden = tem;
+  $('#eleven-final').textContent = elevenInfo.final || '';
+  $('#eleven-remover').hidden = !!elevenInfo.doAmbiente;
+  $('#eleven-voz-campo').hidden = $('#eleven-modelo-campo').hidden = !tem;
+  const u = elevenInfo.uso;
+  if (tem && u && u.limite) {
+    const resta = Math.max(0, u.limite - u.usados);
+    const renova = u.renova ? ` · renova em ${new Date(u.renova * 1000).toLocaleDateString('pt-BR')}` : '';
+    avisoEleven(`Plano ${u.plano || ''}: restam ${resta.toLocaleString('pt-BR')} de ${u.limite.toLocaleString('pt-BR')} caracteres${renova}.`);
+  } else avisoEleven('');
+  if (tem && !vozesEl) await carregarVozesEleven();
+  else if (tem) $('#eleven-vozes').value = c.narracaoVozEleven || '';
+  custoEleven();
+}
+async function carregarVozesEleven(atualizar = false) {
+  const sel = $('#eleven-vozes');
+  sel.innerHTML = '<option value="">carregando vozes…</option>';
+  try { vozesEl = await api('/api/elevenlabs/vozes' + (atualizar ? '?atualizar=1' : '')); }
+  catch (e) { vozesEl = null; sel.innerHTML = '<option value="">—</option>'; avisoEleven(e.message, true); return; }
+  const c = roteiro.config;
+  sel.innerHTML = vozesEl.map((v) => `<option value="${v.id}">${esc(v.nome)}${v.info ? ' — ' + esc(v.info) : ''}</option>`).join('');
+  if (c.narracaoVozEleven && !vozesEl.some((v) => v.id === c.narracaoVozEleven)) {
+    sel.insertAdjacentHTML('afterbegin', `<option value="${esc(c.narracaoVozEleven)}">(voz que não está mais na conta)</option>`);
+  }
+  if (!c.narracaoVozEleven && vozesEl.length) { c.narracaoVozEleven = vozesEl[0].id; marcarAlterado(); }
+  sel.value = c.narracaoVozEleven || '';
+}
+// quanto o roteiro gasta (falas já geradas ficam guardadas e não gastam de novo)
+function custoEleven() {
+  const c = roteiro.config;
+  let n = 0;
+  for (const p of roteiro.passos || []) {
+    const prop = String(p.narracao || '').trim();
+    let t = prop === '-' ? '' : prop;
+    if (!t && c.narracaoUsarLegendas !== false) { const l = String(p.legenda || '').trim(); t = l === '-' ? '' : l.replace(/^\s*\d+\s*[.)\-–]\s*/, ''); }
+    n += t.length;
+  }
+  const meio = c.narracaoModeloEleven === 'eleven_flash_v2_5';
+  $('#eleven-custo').textContent = n ? `Este roteiro tem ~${n.toLocaleString('pt-BR')} caracteres de narração (~${Math.ceil(meio ? n / 2 : n).toLocaleString('pt-BR')} créditos). Falas que não mudaram são reaproveitadas e não gastam de novo.` : '';
+}
+$('#eleven-salvar').onclick = async (e) => {
+  e.preventDefault();
+  const k = $('#eleven-chave').value.trim();
+  if (!k) return $('#eleven-chave').focus();
+  $('#eleven-salvar').disabled = true; avisoEleven('Conferindo a chave…');
+  try {
+    elevenInfo = { ...(elevenInfo || {}), ...(await api('/api/elevenlabs', { method: 'PUT', body: { chave: k } })) };
+    $('#eleven-chave').value = ''; vozesEl = null;
+    await atualizarEleven(true);
+  } catch (err) { avisoEleven(err.message, true); }
+  $('#eleven-salvar').disabled = false;
+};
+$('#eleven-chave').onkeydown = (e) => { if (e.key === 'Enter') $('#eleven-salvar').click(); };
+$('#eleven-trocar').onclick = (e) => { e.preventDefault(); $('#eleven-tem').hidden = true; $('#eleven-sem').hidden = false; $('#eleven-chave').focus(); };
+$('#eleven-remover').onclick = async (e) => {
+  e.preventDefault();
+  if (!confirm('Remover a chave da ElevenLabs deste computador?')) return;
+  await api('/api/elevenlabs', { method: 'DELETE' }); vozesEl = null; await atualizarEleven(true);
+};
+$('#eleven-modelos').addEventListener('change', () => setTimeout(custoEleven));
+$('#eleven-recarregar').onclick = (e) => { e.preventDefault(); carregarVozesEleven(true); };
+let audioAmostra = null;
+$('#eleven-ouvir').onclick = (e) => {
+  e.preventDefault();
+  const v = (vozesEl || []).find((x) => x.id === $('#eleven-vozes').value);
+  if (audioAmostra) { audioAmostra.pause(); audioAmostra = null; return; }
+  if (!v || !v.amostra) return avisoEleven('Essa voz não tem amostra para ouvir.', true);
+  audioAmostra = new Audio(v.amostra); audioAmostra.onended = () => (audioAmostra = null); audioAmostra.play();
+};
 
 // ---------------- login lembrado ----------------
 async function carregarPerfis() {

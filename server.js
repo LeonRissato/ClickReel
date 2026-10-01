@@ -14,7 +14,7 @@ const { renderizar } = require('./lib/renderizador');
 const { apontar } = require('./lib/apontador');
 const { capturar } = require('./lib/captura');
 const { comPadrao, FORMATOS, TRES_FORMATOS, passoValeNoFormato, abrirNavegador, slugPerfil } = require('./lib/config');
-const { gerarNarracoes, VOZES_NEURAIS } = require('./lib/narracao');
+const { gerarNarracoes, VOZES_NEURAIS, MODELOS_ELEVEN, vozesEleven, usoEleven } = require('./lib/narracao');
 const { caminhoFfmpeg } = require('./lib/renderizador');
 
 const PORTA = Number(process.env.PORTA || 4580);
@@ -132,12 +132,20 @@ const comFormato = (roteiro, formato) => ({ ...roteiro, config: { ...comPadrao(r
 function passosDoFormato(roteiro, formato) {
   return (roteiro.passos || []).map((p, i) => ({ ...p, _i: i })).filter((p) => p.acao && passoValeNoFormato(p, formato));
 }
+// Chave da ElevenLabs: só neste computador (chaves.json), nunca no roteiro nem de volta para a página inteira
+const ARQ_CHAVES = path.join(RAIZ, 'chaves.json');
+function lerChaves() { try { return JSON.parse(fs.readFileSync(ARQ_CHAVES, 'utf8')); } catch (_) { return {}; } }
+function gravarChaves(c) { fs.writeFileSync(ARQ_CHAVES, JSON.stringify(c, null, 2)); }
+const chaveEleven = () => process.env.ELEVENLABS_API_KEY || lerChaves().elevenlabs || '';
+const mascarar = (k) => (k ? '••••' + k.slice(-4) : '');
+let cacheVozesEleven = { chave: '', quando: 0, vozes: null };
+
 async function prepararNarracao(roteiro, formato, prefixo) {
   const config = comFormato(roteiro, formato).config;
   if (!config.narracaoAtiva) return [];
   return gerarNarracoes({
     passos: passosDoFormato(roteiro, formato), config,
-    pastaCache: P.vozes, ffmpeg: caminhoFfmpeg(),
+    pastaCache: P.vozes, ffmpeg: caminhoFfmpeg(), chaveEleven: chaveEleven(),
     aoProgredir: (m) => atualizar({ mensagem: prefixo + m })
   });
 }
@@ -419,6 +427,35 @@ const servidor = http.createServer(async (req, res) => {
 
     // narração: vozes disponíveis
     if (rota === '/api/vozes') return json(res, 200, VOZES_NEURAIS);
+
+    // ElevenLabs: chave, vozes e uso do plano
+    if (rota === '/api/elevenlabs' && req.method === 'GET') {
+      const k = chaveEleven();
+      return json(res, 200, { configurada: !!k, final: mascarar(k), doAmbiente: !!process.env.ELEVENLABS_API_KEY, modelos: MODELOS_ELEVEN, uso: k && url.searchParams.get('uso') ? await usoEleven(k) : null });
+    }
+    if (rota === '/api/elevenlabs' && req.method === 'PUT') {
+      const { chave } = await lerCorpo(req);
+      const k = String(chave || '').trim();
+      if (!/^[A-Za-z0-9_\-]{20,}$/.test(k)) return json(res, 400, { erro: 'Essa não parece uma chave da ElevenLabs. Copie a chave inteira (começa com "sk_").' });
+      try { await vozesEleven(k); } catch (e) { return json(res, 400, { erro: 'Não salvei: ' + e.message }); }
+      gravarChaves({ ...lerChaves(), elevenlabs: k });
+      cacheVozesEleven = { chave: '', quando: 0, vozes: null };
+      return json(res, 200, { configurada: true, final: mascarar(k), uso: await usoEleven(k) });
+    }
+    if (rota === '/api/elevenlabs' && req.method === 'DELETE') {
+      const c = lerChaves(); delete c.elevenlabs; gravarChaves(c);
+      cacheVozesEleven = { chave: '', quando: 0, vozes: null };
+      return json(res, 200, { configurada: !!process.env.ELEVENLABS_API_KEY });
+    }
+    if (rota === '/api/elevenlabs/vozes') {
+      const k = chaveEleven();
+      if (!k) return json(res, 400, { erro: 'Coloque a chave da API da ElevenLabs primeiro.' });
+      try {
+        const novo = url.searchParams.get('atualizar') || cacheVozesEleven.chave !== k || Date.now() - cacheVozesEleven.quando > 10 * 60e3;
+        if (novo) cacheVozesEleven = { chave: k, quando: Date.now(), vozes: await vozesEleven(k) };
+        return json(res, 200, cacheVozesEleven.vozes);
+      } catch (e) { return json(res, 502, { erro: 'Não consegui listar as vozes: ' + e.message }); }
+    }
 
     // login lembrado
     if (rota === '/api/perfis' && req.method === 'GET') return json(res, 200, listarPerfis());

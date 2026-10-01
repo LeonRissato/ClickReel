@@ -27,8 +27,10 @@ e moldura de navegador, tablet ou celular.
 - **Pausar / Parar** durante testes e gravações, com a espera de cada passo mostrada ao vivo.
 - **Tema claro, escuro ou automático** no painel.
 - **🔊 Narração automática**: uma voz em português lê as legendas (ou um texto próprio por passo).
-  Vozes neurais da Microsoft (grátis, com internet) ou a voz do Windows (offline). A gravação espera
-  cada fala terminar.
+  Vozes neurais da Microsoft (grátis, com internet), a voz do Windows (offline) ou **ElevenLabs**
+  (vozes premium, com a sua chave da API). A gravação espera cada fala terminar.
+  A chave da ElevenLabs fica em `chaves.json`, só no seu computador (também aceita a variável
+  `ELEVENLABS_API_KEY`); falas já geradas são guardadas e não gastam créditos de novo.
 - **🎬 Abertura e encerramento**: título, subtítulo, chamada final, endereço e QR code.
 - **🏷 Logo (marca d'água)** no canto escolhido, com tamanho e opacidade.
 - **Destacar elemento**: escurece a tela, ilumina um botão ou preço e mostra um balão explicativo.

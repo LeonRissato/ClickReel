@@ -226,3 +226,9 @@ details.secao > :last-child { margin-bottom: 14px; }
 .roteiro-sel select { flex: 1 1 200px; }
 .acoes { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
 details.secao > small.dica, details.secao > .dica { display: block; margin-bottom: 10px; }
+
+/* ElevenLabs */
+.eleven { border: 1px solid var(--borda, rgba(127,127,127,.25)); border-radius: 10px; padding: 10px 12px; margin: 6px 0 10px; display: grid; gap: 8px; }
+.eleven .campo { margin: 0; }
+.ok-chave { color: #2e9d5b; font-weight: 600; font-size: 13px; }
+.ok-chave b { font-family: ui-monospace, monospace; font-weight: 500; }
